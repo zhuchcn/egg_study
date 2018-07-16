@@ -1,0 +1,69 @@
+---
+title: "Biogenic Amines Data"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", 
+                href: "../../site/_site/hdl.html", 
+                align: left }
+        source_code: embed
+        
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('plyr', 'dplyr','stringr','reshape2','tibble', 'DT','data.table',
+         'limma')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("../../data/mcb.Rdata")
+```
+
+Calibrated (umol/mL)
+====================
+
+###
+
+```{r}
+Biogenic_Amines$edata_list$`umol/mL` %>%
+    t %>% as.data.frame %>%
+    datatable(
+        extensions = 'Buttons',
+        options = list(
+            dom = "Bfrtip",
+            pageLength = 40,
+            bottons = c("copy","csv","excel")
+        )
+    ) %>%
+    formatRound(columns = rownames(Biogenic_Amines$edata_list$`umol/mL`),
+                digits = 3)
+```
+
+Uncalibrated (raw MS intensity)
+====================
+
+###
+
+```{r}
+Biogenic_Amines$edata_list$raw %>%
+    mutate(feature = Biogenic_Amines$fdata$Annotation) %>%
+    column_to_rownames("feature") %>%
+    t %>% as.data.frame %>%
+    datatable(
+        extensions = 'Buttons',
+        options = list(
+            dom = "Bfrtip",
+            pageLength = 40,
+            bottons = c("copy","csv","excel")
+        )
+    )
+```

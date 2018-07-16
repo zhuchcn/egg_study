@@ -1,0 +1,61 @@
+---
+title: 'Table: Dietary Info'
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r}
+pkgs = c('dplyr','stringr','reshape2','tibble', 'DT', 'Metabase',
+         "knitr", "kableExtra")
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+load("../../data/diet.Rdata")
+```
+
+This is the dietary nutrient data for 4 time points.
+
+```{r}
+pdata = sample_table(diet)
+edata = conc_table(diet) %>% t %>%
+    as.data.frame %>%
+    mutate(Timepoint = factor(pdata$Timepoint, level = c("Pre", "Post")),
+            Treatment = factor(pdata$Treatment, level = c("sub", "egg")),
+            Subject   = pdata$Subject) %>%
+    melt(id.var = c("Timepoint", "Treatment", "Subject"),
+         variable.name = "diet_var", value.name = "value") %>%
+    group_by(Timepoint, Treatment, diet_var) %>%
+    summarize(
+        mean = mean(value), sd = sd(value), se = sd/sqrt(length(value))
+    )
+data = edata %>%
+    melt(id.var = c("Timepoint", "Treatment", "diet_var"),
+         variable.name = "value_var", value.name = "value") %>%
+    dcast(diet_var ~ Treatment + Timepoint + value_var,
+          value.var = "value")
+names = c("Nutrient", rep(c("mean", "sd", "se"), 4))
+kable(data, col.names = names, digits = 3) %>%
+    kable_styling("striped", full_width = F) %>%
+    add_header_above(c("", "Pre"=3, "Post"=3, "Pre"=3, "Post"=3)) %>%
+    add_header_above(c("", "Substitute"=6, "Whole Egg"=6))
+```
+
+
+```{r}
+plus = "\u00b1"
+Encoding(plus) = "UTF-8"
+data = edata %>%
+    mutate(value = paste(round(mean, 2), plus, round(se, 3)))  %>%
+    dcast(diet_var ~ Treatment + Timepoint, value.var = "value")
+col.names = c("Nutrient",
+              paste(c("Pre", "Post", "Pre", "Post"), "(mean",plus,"sd)"))
+kable(data,
+      col.names = col.names) %>%
+    kable_styling("striped") %>%
+    add_header_above(c("", "Substitute" = 2, "Whole Egg" = 2))
+```

@@ -1,0 +1,102 @@
+---
+title: "Lipidome vs HDL Function and Proteins"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", 
+                href: "../../../docs/hdl.html", 
+                align: left }
+        source_code: embed
+runtime: shiny 
+---
+
+<style>
+.datatables{
+    overflow: auto
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('dplyr','stringr','reshape2','tibble', 'plotly', 'DT', 'Metabase',
+         'ggmetaplots', 'ggsci')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load('../Rdata/lpd_precalc.Rdata')
+```
+
+Inputs {.sidebar}
+-----------------------------------
+
+```{r}
+inputPanel(
+    selectInput("level", "Lipid Class or Feature",
+                choices = names(lipidome_set), selected = "class"),
+    selectInput("normal", "Select a lipidome data normalize method",
+                choices = names(lipidome_set[[1]]),
+                selected = names(lipidome_set[[1]])[1]),
+    selectInput("method", "Select a correlation method",
+                choices = names(corr_fct[[1]][[1]]),
+                selected = "pearson"),
+    selectInput("fct", "Select a HDL function or protein variabel",
+                choices = featureNames(hdl_function))
+)
+```
+
+Column
+-----------------------------------
+
+###
+
+```{r}
+renderPlotly({
+    df = data.frame(
+        x = lipidome_set[[input$level]][[input$normal]]$conc_table[feature_selector(),],
+        y = hdl_function$conc_table[input$fct,],
+        Treatment = hdl_function$sample_table$Treatment,
+        Timepoint = hdl_function$sample_table$Timepoint,
+        Subject = hdl_function$sample_table$Subject
+    )
+    p = ggscatterplot(df, "x", "y", color = "Subject", color.pal = pal_jama()(7)) +
+        labs(x = paste0(feature_selector(), " [", input$normal, "]"), 
+                        y = input$fct)
+    ggplotly(p)
+})
+```
+
+Column
+-----------------------------------
+
+###
+
+```{r}
+stats_table = reactive({
+    corr_fct[[input$level]][[input$normal]][[input$method]][[input$fct]] %>%
+        rownames_to_column("Feature") %>%
+        arrange(pval) %>%
+        sapply(function(col){
+            if(!is.numeric(col)) return(col)
+            round(col, digits = 3)
+        }) %>%
+        as.data.frame %>%
+        column_to_rownames("Feature")
+})
+    
+output$stats_table = renderDataTable(
+    stats_table(), 
+    selection = list(mode = "single", selected = 1),
+    server=T
+)
+feature_selector = reactive({
+    rownames(stats_table())[input$stats_table_rows_selected]
+})
+dataTableOutput("stats_table")
+```

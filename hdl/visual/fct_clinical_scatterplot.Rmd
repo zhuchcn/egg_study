@@ -1,0 +1,108 @@
+---
+title: "HDL Function vs Clinical Values Correlations"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { icon: "fa-home",
+                title: "Home", 
+                href: "../../../docs/hdl.html", 
+                align: left }
+        source_code: embed
+runtime: shiny 
+---
+
+<style>
+.datatables{
+    overflow: auto;
+}
+.control-label{
+    font-weight: bold !important;
+}
+.chart-title{
+    color: #000000;
+    text-align: center;
+    font-size: 110%
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('dplyr','stringr','reshape2','tibble', 'plotly', 'DT',
+         'Metabase', 'ggmetaplots','ggsci')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("../Rdata/fct_precalc.Rdata")
+```
+
+Inputs {.sidebar}
+----------------------------
+
+###
+
+```{r}
+inputPanel(
+    selectInput("clinical", "Select a HDL Function",
+                choices = featureNames(clinical), 
+                selected="Cholesterol (mg/dL)"),
+    selectInput("method", "Select the Correlation Method",
+                choices = names(corr_clinical),
+                selected = "pearson")
+)
+```
+
+Column
+----------------------------
+
+###
+
+```{r}
+renderPlotly({
+    df = data.frame(
+        x = hdl_function$conc_table[feature_selector(),],
+        y = clinical$conc_table[input$clinical,],
+        Treatment = hdl_function$sample_table$Treatment,
+        Timepoint = hdl_function$sample_table$Timepoint,
+        Subject = hdl_function$sample_table$Subject
+    )
+    p = ggscatterplot(df, "x", "y", color = "Subject", color.pal = pal_jama()(7)) +
+        labs(x = feature_selector(), y = input$clinical)
+    ggplotly(p)
+})
+```
+
+Column
+----------------------------
+
+###
+
+```{r}
+stats_table = reactive({
+    corr_clinical[[input$method]][[input$clinical]] %>%
+        rownames_to_column("Feature") %>%
+        arrange(pval) %>%
+        sapply(function(col){
+            if(!is.numeric(col)) return(col)
+            round(col, digits = 3)
+        }) %>%
+        as.data.frame %>%
+        column_to_rownames("Feature")
+})
+    
+output$stats_table = renderDataTable(
+    stats_table(), 
+    selection = list(mode = "single", selected = 1),
+    server=T
+)
+feature_selector = reactive({
+    rownames(stats_table())[input$stats_table_rows_selected]
+})
+dataTableOutput("stats_table")
+```

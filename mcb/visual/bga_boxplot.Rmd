@@ -1,0 +1,109 @@
+---
+title: "Biogenic Amines Boxplots"
+output: 
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", href: "../../../docs/mcb.html", align: left }
+        source_code: embed
+runtime: shiny 
+---
+
+<style>
+.datatables{
+    overflow: auto
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('plyr', 'dplyr','stringr','reshape2','tibble', 'plotly', "DT",
+         'limma','Biostrings','ggplot2','ggsci')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load('../Rdata/bga_precalc.Rdata')
+```
+
+Inputs {.sidebar}
+--------------------------------------
+
+###
+
+```{r}
+inputPanel({
+    selectInput("level", "Select a Level: ",
+                choices = names(limma_list), selected = names(limma_list)[1])
+})
+```
+
+Column
+-------------------------------------
+
+### Boxplot
+
+```{r}
+renderPlotly({
+    df = data.frame(
+        Value = as.numeric(edata_list[[input$level]][feature_selector(),]),
+        Subj = pdata$Subj,
+        TX = pdata$TX,
+        Day = pdata$Day
+    )
+    
+    g = ggplot(df,aes(x = Day,y=Value)) +
+        geom_boxplot() +
+        geom_point(aes(colour = Subj), size=2) +
+        geom_line(aes(group = Subj, colour = Subj)) + 
+        facet_grid(.~TX) +
+        labs(title=feature_selector()) +
+        theme_bw() +
+        scale_color_manual(values = colorRampPalette(colors=pal_jama()(7))(20)) +
+        theme(
+            axis.title = element_blank(),
+            axis.text.x = element_text(size=rel(1.5), color = 'black'),
+            legend.position = 'none',
+            strip.text = element_text(size=15))
+    ggplotly(g)
+    
+})
+```
+
+Column
+-------------------------------------
+
+### limma stats table
+
+```{r}
+stat_table = reactive({
+    limma_list[[input$level]] %>%
+    as.data.frame() %>%
+    rownames_to_column("Feature") %>%
+    arrange(P.Value) %>% 
+    mutate(
+        logFC = round(logFC, digits = 3),
+        AveExpr = round(AveExpr, digits = 3),
+        t = round(t, digits=3),
+        P.Value = round(P.Value, digits = 3),
+        adj.P.Val = round(adj.P.Val, digits = 3),
+        B = round(B, digits = 3)
+    ) %>%
+    column_to_rownames("Feature")
+}) 
+
+output$stat_table = renderDataTable(
+    stat_table(),
+    selection = list(mode = "single", selected = 1),
+    server=T
+)
+feature_selector = reactive({
+    rownames(stat_table())[input$stat_table_rows_selected]
+})
+dataTableOutput("stat_table")
+```

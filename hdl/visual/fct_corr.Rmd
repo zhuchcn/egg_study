@@ -1,0 +1,187 @@
+---
+title: "HDL Function Correlations"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { icon: "fa-home",
+                title: "Home", 
+                href: "../../../docs/hdl.html", 
+                align: left }
+        source_code: embed
+runtime: shiny 
+---
+
+<style>
+.datatables{
+    overflow: auto;
+}
+.dashboard-column{
+    border: 5px solid #707070;
+}
+.control-label{
+    font-weight: bold !important;
+}
+.chart-title{
+    color: #000000;
+    text-align: center;
+    font-size: 110%
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('plyr', 'dplyr','stringr','reshape2','tibble', 'plotly', 'DT',
+         'ggplot2','ggsci')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("../Rdata/fct_precalc.Rdata")
+```
+
+Inputs {.sidebar}
+----------------------------
+
+###
+
+```{r}
+inputPanel(
+    selectInput("fct", "Select a HDL Function",
+                choices = names(fct_corr), 
+                selected="Chol Efflux (ApoB Depleted Serum 1%)")
+)
+```
+
+<div class="shiny-input-panel">
+<div style="border: 1px solid #CCCCCC; border-radius: 5px; margin: 1% 0.5%; background-color: #FFFFFF;">
+<div style="margin:5% 3%;">
+<p style="font-size: 110%; font-weight: bold">
+Info:
+</p>
+<p>
+In this page we are looking at the correlation between HDL function and proteins, versus other variables. The panel on the left is the correlation between the selected HDL function variable versus other HDL variable, while the right panel is the correlation between this HDL function variable versus other clinical values.
+</p>
+</div>
+</div>
+</div>
+
+```{r, include=F}
+inputPanel(
+    cat("say something")
+)
+```
+
+Column
+--------------------------
+
+### vs HDL Functions and Proteins
+
+```{r}
+renderPlotly({
+    p = data.frame(
+        fct_x = fct_data[,input$fct],
+        fct_y = fct_data[,fct_selector()],
+        Subj = pdata$Subj,
+        TX = pdata$TX,
+        Day = pdata$Day
+    ) %>%
+        ggplot(aes(fct_x, fct_y)) +
+        geom_point(aes(color = Subj), size=2) +
+        stat_smooth(method="lm") +
+        scale_color_manual(values = colorRampPalette(colors=pal_jama()(7))(20)) +
+        labs(x=input$fct,
+             y=fct_selector()) +
+        theme_bw()
+    ggplotly(p)
+})
+```
+
+###
+
+```{r}
+fct_table = reactive({
+    fct_corr[[input$fct]] %>%
+        rownames_to_column("Feature") %>%
+        arrange(pearson.pvalue) %>%
+        sapply(function(col){
+            if(!is.numeric(col)) return(col)
+            round(col, digits = 3)
+        }) %>%
+        as.data.frame %>%
+        column_to_rownames("Feature")
+})
+    
+output$fct_table = renderDataTable(
+    fct_table(), 
+    selection = list(mode = "single", selected = 1),
+    server=T
+)
+fct_selector = reactive({
+    rownames(fct_table())[input$fct_table_rows_selected]
+})
+dataTableOutput("fct_table")
+```
+
+Column
+--------------------------
+
+### vs Clinical Values
+
+```{r}
+renderPlotly({
+    p = data.frame(
+        fct = fct_data[,input$fct],
+        clinical = clinical_data[,clinical_selector()],
+        Subj = pdata$Subj,
+        TX = pdata$TX,
+        Day = pdata$Day
+    ) %>%
+        ggplot(aes(fct, clinical)) +
+        geom_point(aes(color = Subj), size=2) +
+        stat_smooth(method="lm") +
+        scale_color_manual(values = colorRampPalette(colors=pal_jama()(7))(20)) +
+        labs(x=input$fct,
+             y=clinical_selector()) +
+        theme_bw()
+    ggplotly(p)
+})
+```
+
+###
+
+```{r}
+clinical_table = reactive({
+    df = clinical_corr %>%
+        sapply(function(subdf) subdf[input$fct,]) %>% 
+        t %>% as.data.frame %>%
+        sapply(function(col){
+            if(is.character(col)) return(col)
+            as.numeric(col)
+        }) %>%
+        as.data.frame() %>%
+        mutate(Feature = names(clinical_corr)) %>%
+        arrange(pearson.pvalue) %>%
+        sapply(function(col){
+            if(!is.numeric(col)) return(col)
+            round(col, digits = 3)
+        }) %>%
+        as.data.frame %>%
+        column_to_rownames("Feature")
+})
+    
+output$clinical_table = renderDataTable(
+    clinical_table(), 
+    selection = list(mode = "single", selected = 1),
+    server=T
+)
+clinical_selector = reactive({
+    rownames(clinical_table())[input$clinical_table_rows_selected]
+})
+dataTableOutput("clinical_table")
+```

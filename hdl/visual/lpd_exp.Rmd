@@ -1,0 +1,134 @@
+---
+title: "Lipidome Exploratory"
+output: 
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", 
+                href: "../../../docs/hdl.html", 
+                align: left }
+        source_code: embed
+runtime: shiny 
+---
+
+<style>
+.datatables{
+    overflow: auto
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('plyr', 'dplyr','stringr','reshape2','tibble', 'plotly', "DT",
+         'limma','ggplot2','ggsci')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load('../Rdata/lpd_precalc.Rdata')
+```
+
+Column
+-----------------------
+
+###
+
+```{r}
+edata = edata_list$species$Proportion
+edata_t = log(as.matrix(edata+1)) %>%
+    apply(1, scale) %>% t
+colnames(edata_t) = colnames(edata)
+pca = prcomp(edata_t)    
+
+df = data.frame(
+    PC1 = pca$rotation[,"PC1"],
+    PC2 = pca$rotation[,"PC2"],
+    PC3 = pca$rotation[,"PC3"],
+    sample_id = rownames(pca$rotation),
+    Subj = pdata$Subj,
+    TX = pdata$TX,
+    Day = pdata$Day
+)
+pca_std = pca$sdev/sum(pca$sdev)
+
+p = ggplot(df, aes(PC1, PC2, Sample=sample_id)) +
+    geom_point(aes(color = interaction(TX, Day)), size=3, alpha=0.5) +
+    #scale_color_lancet() +
+    theme_bw() +
+    labs(
+        x=str_c("PC1 [", round(pca_std[1]*100,1),"% explained]"),
+        y=str_c("PC2 [", round(pca_std[2]*100,1),"% explained]"),
+        title = "Proportion"
+    )
+ggplotly(p)
+```
+
+###
+
+```{r}
+edata = edata_list$species$Concentration
+edata_t = log(as.matrix(edata+1)) %>%
+    apply(1, scale) %>% t
+colnames(edata_t) = colnames(edata)
+pca = prcomp(edata_t)    
+
+df = data.frame(
+    PC1 = pca$rotation[,"PC1"],
+    PC2 = pca$rotation[,"PC2"],
+    PC3 = pca$rotation[,"PC3"],
+    sample_id = rownames(pca$rotation),
+    Subj = pdata$Subj,
+    TX = pdata$TX,
+    Day = pdata$Day
+)
+pca_std = pca$sdev/sum(pca$sdev)
+
+p = ggplot(df, aes(PC1, PC2, Sample=sample_id)) +
+    geom_point(aes(color = interaction(TX, Day)), size=3, alpha=0.5) +
+    #scale_color_lancet() +
+    theme_bw() +
+    labs(
+        x=str_c("PC1 [", round(pca_std[1]*100,1),"% explained]"),
+        y=str_c("PC2 [", round(pca_std[2]*100,1),"% explained]"),
+        title = "Concentration"
+    )
+ggplotly(p)
+```
+
+Column
+-----------------------
+
+###
+
+```{r}
+df = data.frame(
+    pval = limma_list$species$Proportion$P.Value,
+    feature = rownames(limma_list$species$Concentration)
+)
+p = ggplot(df) +
+    geom_histogram(aes(pval), binwidth = 0.025, col="white") +
+    labs(title = "Proportion") +
+    theme_bw()
+ggplotly(p)
+```
+
+###
+
+```{r}
+df = data.frame(
+    pval = limma_list$species$Concentration$P.Value,
+    feature = rownames(limma_list$species$Concentration)
+)
+p = ggplot(df) +
+    geom_histogram(aes(pval), binwidth = 0.025, col="white") +
+    labs(title = "Concentration") +
+    theme_bw()
+ggplotly(p)
+```
+
+

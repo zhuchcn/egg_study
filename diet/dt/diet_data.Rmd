@@ -1,0 +1,42 @@
+---
+title: "Diet Data"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", 
+                href: "../../site/_site/index.html", 
+                align: left }
+        source_code: embed
+runtime: shiny 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('plyr', 'dplyr','stringr','reshape2','tibble', 'data.table', 'DT')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("../../data/diet.Rdata")
+```
+
+###
+
+```{r}
+diet_data %>%
+    datatable(
+        extensions = 'Buttons',
+        options = list(
+            dom = "Bfrtip",
+            pageLength = 80,
+            bottons = c("copy","csv","excel")
+        )
+    ) %>%
+    formatRound(columns = colnames(diet_data), digits = 3)
+```

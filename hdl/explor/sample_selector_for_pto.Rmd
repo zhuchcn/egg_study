@@ -1,0 +1,180 @@
+---
+title: "Sample Selection for Proteomics"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", 
+                href: "../../site/_site/hdl.html", 
+                align: left }
+        source_code: embed
+runtime: shiny 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('plyr', 'dplyr','stringr','reshape2','tibble', 'plotly', 'DT',
+         'ggplot2','ggsci','knitr')
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("../../data/diet.Rdata")
+load("../Rdata/fct_precalc.Rdata")
+```
+
+```{r}
+df = data.frame(
+    chol_efflux = fct_data$`Chol Efflux (ApoB Depleted Serum 1%)`,
+    Subj = pdata$Subj,
+    Day = pdata$Day,
+    TX = pdata$TX
+) %>%
+    filter(TX=="egg") %>%
+    dcast(Subj + TX ~ Day, value.var="chol_efflux") %>%
+    mutate(change = Post-Pre)
+```
+
+Inputs {.sidebar}
+------------------------------
+
+```{r}
+inputPanel(
+    numericInput("n","QC Sample Size (n)", value = 2),
+    numericInput("sigma", "QC Standard Deviation", value = 2, step=1),
+    numericInput("alpha", "alpha", value = 0.05),
+    numericInput("seed", "Random seed", value=12321),
+    selectInput("var", "Select a Variable",
+                choices = names(clinical_data), 
+                selected="Cholesterol total (mg/dL)")
+)
+```
+
+Column
+-------------------------------
+
+### The Density Distribution of Chol Efflux Measurement {data-height=500}
+
+```{r}
+dnorm_shade = function(cutoff, x, mean, sd){
+    y = dnorm(x, mean, sd)
+    y[x<cutoff] = NA
+    return(y)
+}
+cutoff = reactive({
+    qnorm((1-input$alpha), mean=0, sd=input$sigma/sqrt(input$n))
+})
+renderPlot({
+    sd = input$sigma/sqrt(input$n)
+    ggplot(data.frame(mu=c(-3*input$sigma, 3*input$sigma)), aes(x=mu)) +
+        stat_function(fun=dnorm, geom="line", color = "darkblue",size=1,
+                      args=list(mean=0, sd=sd))+
+        stat_function(fun=dnorm_shade, geom="area", fill="red", alpha=0.25,
+                      args=list(cutoff=cutoff(), mean=0, 
+                                sd=sd)) +
+        geom_vline(xintercept = cutoff(), linetype="dashed", size=1, 
+                   color="darkred") +
+        theme_bw()
+})
+```
+
+### {data-height=330}
+
+The difference needs to be bigger than **`r reactive({cutoff()})`** so we are able to reject the null hypothesis that the two samples are the same. Subjects with cholesterol efflux increased more than **`r reactive({cutoff()})`** are considered as responder.
+
+#### Responder:
+
+```{r}
+responder = reactive({as.character(df$Subj[df$change > cutoff()])})
+reactive({cat(responder())})
+```
+
+#### Non-responder:
+
+```{r}
+non_responder = reactive({as.character(df$Subj[df$change <= cutoff()])})
+reactive(cat(non_responder()))
+```
+
+### Samples Random Selection {data-height=170}
+
+```{r, include=F}
+responder_selected = reactive({
+    set.seed(input$seed)
+    sample(responder(),5)
+})
+non_responder_selected = reactive({
+    set.seed(input$seed)
+    sample(non_responder(),5)
+})
+```
+
+```{r}
+renderTable({
+    data.frame(responder_selected(), non_responder_selected()) %>% t %>% as.data.frame
+}, rownames=T, colnames=F)
+```
+
+Column
+--------------------
+
+### Chol Efflux (all subj) {data-height=550}
+
+```{r}
+renderPlotly({
+    mycolors = colorRampPalette(pal_jama()(7))(20)
+    df2 = data.frame(
+        var = fct_data$`Chol Efflux (ApoB Depleted Serum 1%)`,
+        Subj = pdata$Subj,
+        TX = pdata$TX,
+        Day = pdata$Day
+    )
+    p = ggplot(df2, aes(Day, var)) +
+        geom_boxplot() +
+        geom_point(aes(color = Subj), size=2) +
+        geom_line(aes(group=Subj, color=Subj)) +
+        facet_grid(.~TX) +
+        scale_color_manual(values=mycolors) +
+        labs(y="") +
+        theme_bw()
+    ggplotly(p)
+})
+```
+
+### Selected Subjs {data-height=450}
+
+
+```{r}
+renderPlotly({
+    mycolors = colorRampPalette(pal_jama()(7))(20)
+    df2 = data.frame(
+        var = clinical_data[,input$var],
+        Subj = pdata$Subj,
+        TX = pdata$TX,
+        Day = pdata$Day
+    ) %>%
+        mutate(
+            Label = ifelse(
+                Subj %in% responder_selected(), "Responder",
+                ifelse(
+                    Subj %in% non_responder_selected(), "Non-responder", NA
+                ))) %>%
+        filter(!is.na(Label))
+    p = ggplot(df2, aes(Day, var)) +
+        geom_boxplot() +
+        geom_point(aes(color = Subj)) +
+        geom_line(aes(group = Subj, color = Subj)) +
+        facet_grid(Label~TX) +
+        scale_color_manual(values=mycolors) +
+        labs(y="", title=input$var) +
+        theme_bw()
+    ggplotly(p)
+})
+```
+
+
