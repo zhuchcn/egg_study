@@ -1,6 +1,6 @@
 library(dplyr); library(reshape2); library(stringr); library(tibble);
 library(data.table);library(readxl); library(Metabase)
-setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis")
+setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis")
 ##%######################################################%##
 #                                                          #
 ####                        Diet                        ####
@@ -45,14 +45,15 @@ pdata = clinical_data[,1:9] %>%
         sample_id = paste0("Egg", `Study ID`, Visit)
     ) %>%
     as.data.frame %>%
-    column_to_rownames("sample_id") %>%
     setnames(old = "Study ID", "Subject") %>%
     mutate(
         Timepoint = factor(Timepoint, level = c("Pre", "Post")),
         Treatment = factor(Treatment, level = c("sub", "egg")),
         Subject = factor(Subject)
-    )
+    ) %>%
+    column_to_rownames("sample_id") 
 edata = clinical_data[,-(1:9)] %>% t
+edata = edata[rownames(edata) != "ApoA1-HDL",]
 colnames(edata) = rownames(pdata)
 
 crp = read.csv(

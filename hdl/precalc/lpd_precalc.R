@@ -6,7 +6,7 @@ for(pkg in pkgs){
 }
 
 ## --------------------- load data -------------------------
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/data")
+setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/data")
 load("hdl.Rdata"); load("diet.Rdata")
 
 lpd_conc = lipidome
@@ -61,7 +61,7 @@ corr_diet = corr_func(diet)
 corr_clinical = corr_func(clinical)
 
 ## ---------------------- save ----------------------------
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/hdl/Rdata")
+setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/hdl/Rdata")
 save(lipidome_set, limma_list, corr_fct, corr_imb, corr_diet, corr_clinical,
      hdl_function, ion_morbility, diet, clinical,
      file="lpd_precalc.Rdata")

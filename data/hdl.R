@@ -9,7 +9,7 @@ library(Metabase)
 #                                                          #
 ##%######################################################%##
 rm(list = ls())
-setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis")
+setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis")
 file = "raw_data/lipidome/mx 348391_Zhu_CSH-QTOF MSMS_lipidomics_isolated HDL particles_11-2017_submit.xlsx"
 lipidome = import_wcmc_excel(
     file            = file,
@@ -148,12 +148,21 @@ protein = read_excel(
     as.data.frame %>%
     column_to_rownames("sample_id")
 
+# HDL apo A1 
+file = "raw_data/clinical_data/1-LSK Egg Study Clincal & Diet Data w_ApoA1-HDL.6.27.2018.xlsx"
+apoa1 = read_excel(path = file, sheet = "Sheet1", range = "A1:R81") %>%
+    select(c("Study ID", "Visit", "ApoA1-HDL")) %>%
+    mutate(sample_id = paste0("Egg", `Study ID`, `Visit`)) %>%
+    as.data.frame %>%
+    column_to_rownames("sample_id")
+    
 # order it
 fct_data_2 = fct_data_2[rownames(fct_data),]
 fct_data_3 = fct_data_3[rownames(fct_data),]
 fct_data = cbind(fct_data, fct_data_2, fct_data_3[,"change_ox"])
 colnames(fct_data)[7] = "conjugated_diene"
 fct_data$hdl_protein = protein[rownames(fct_data), 3]
+fct_data$`ApoA1-HDL` = apoa1[rownames(fct_data), "ApoA1-HDL"]
 
 hdl_function = MultiSet(
     conc_table = conc_table(t(fct_data)),
