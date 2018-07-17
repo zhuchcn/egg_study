@@ -13,22 +13,29 @@ lpd_conc = lipidome
 lpd_prop = transform_by_sample(lipidome, function(x) x/sum(x))
 lpd_prt  = transform_by_feature(lipidome, function(x)
     x/conc_table(hdl_function)["hdl_protein",])
+lpd_apoa1 = transform_by_feature(lipidome, function(x)
+    x/hdl_function$conc_table["ApoA1-HDL",])
 
 lpd_class_conc = summarize_features(lpd_conc, feature_var = "class")
 lpd_class_prop = summarize_features(lpd_prop, feature_var = "class")
 lpd_class_prt  = transform_by_feature(lpd_class_conc, function(x) 
     x/conc_table(hdl_function)["hdl_protein",])
+lpd_class_apoa1  = transform_by_feature(lpd_class_conc, function(x) 
+    x/conc_table(hdl_function)["ApoA1-HDL",])
+
 
 lipidome_set = list(
     class = list(
         Concentration = lpd_class_conc,
         Proportion    = lpd_class_prop,
-        Adj_protein      = lpd_class_prt
+        Adj_protein   = lpd_class_prt,
+        Adj_apoa1     = lpd_class_apoa1
     ),
     feature = list(
         Concentration = lpd_conc,
         Proportion    = lpd_prop,
-        Adj_protein   = lpd_prt
+        Adj_protein   = lpd_prt,
+        Adj_apoa1     = lpd_apoa1
     )
 )
 
