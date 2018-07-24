@@ -40,6 +40,13 @@ for(pkg in pkgs){
 
 ```{r}
 load("../Rdata/fct_precalc.Rdata")
+corr_clinical_rev = lapply(corr_clinical, function(method){
+    li = lapply(featureNames(hdl_function), function(fct){
+        do.call("rbind", lapply(method, function(li) li[fct,] ))
+    })
+    names(li) = featureNames(hdl_function)
+    return(li)
+})
 ```
 
 Inputs {.sidebar}
@@ -49,13 +56,16 @@ Inputs {.sidebar}
 
 ```{r}
 inputPanel(
-    selectInput("clinical", "Select a HDL Function",
-                choices = featureNames(clinical), 
-                selected="Cholesterol (mg/dL)"),
+    checkboxInput("chk", "Focus on Clinical Values?", value = FALSE),
+    uiOutput("varSelector"),
     selectInput("method", "Select the Correlation Method",
                 choices = names(corr_clinical),
                 selected = "pearson")
 )
+output$varSelector = renderUI({
+    choices = if(input$chk) featureNames(clinical) else featureNames(hdl_function)
+    selectInput("var", "Select a Variable", choices = choices, selected = choices[1])
+})
 ```
 
 Column
@@ -64,10 +74,12 @@ Column
 ###
 
 ```{r}
+X = reactive({if(input$chk) clinical$conc_table else hdl_function$conc_table})
+Y = reactive({if(input$chk) hdl_function$conc_table else clinical$conc_table})
 renderPlotly({
     df = data.frame(
-        x = hdl_function$conc_table[feature_selector(),],
-        y = clinical$conc_table[input$clinical,],
+        x = X()[input$var,],
+        y = Y()[feature_selector(),],
         Treatment = hdl_function$sample_table$Treatment,
         Timepoint = hdl_function$sample_table$Timepoint,
         Subject = hdl_function$sample_table$Subject
@@ -85,7 +97,8 @@ Column
 
 ```{r}
 stats_table = reactive({
-    corr_clinical[[input$method]][[input$clinical]] %>%
+    stats_li = if(input$chk) corr_clinical else corr_clinical_rev
+    stats_li[[input$method]][[input$var]] %>%
         rownames_to_column("Feature") %>%
         arrange(pval) %>%
         sapply(function(col){
