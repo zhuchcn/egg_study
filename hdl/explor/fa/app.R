@@ -5,7 +5,7 @@ for(pkg in pkgs){
             character.only=TRUE)
 }
 
-load('../../Rdata/precalc.Rdata')
+load('../Rdata/precalc.Rdata')
 
 ui <- dashboardPage(
     dashboardHeader(title = "HDL Lipidome"),
