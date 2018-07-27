@@ -1,0 +1,208 @@
+---
+title: "Chromatogram Optimization"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", 
+                href: "../../site/_site/hdl.html", 
+                align: left }
+        source_code: embed
+        vertical_layout: scroll
+        orientation: rows
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r, packages}
+pkgs = c('plyr', 'dplyr','stringr','reshape2','tibble', 'plotly', 'DT',
+         'limma','ggplot2','ggsci', "plotly", "RColorBrewer", "heatmaply")
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("cmg_explor.Rdata")
+```
+
+```{r}
+inputPanel(
+    selectInput("sample", "Select a Sample",
+                choices = names(cmg_data), selected = names(cmg_data)[1])
+)
+```
+
+Row {data-height=350}
+-------------------------------------
+
+### Chromatogram
+
+```{r, eval = T, include = T}
+renderPlotly({
+    cmg1 = cmg_data[[input$sample]][,1:2] %>%
+    na.omit()
+    p = ggplot(cmg1, aes(ml, mAU)) +
+    geom_line()+
+    theme_bw()
+    eventData.lg = event_data(event = "plotly_click", source = "large")
+    eventData.sm = event_data(event = "plotly_click", source = "small")
+    
+    if(!is.null(eventData.lg)){
+        lower.lg = eventData.lg[,"x"]
+        upper.lg = eventData.lg[,"y"]
+        p = p + 
+            geom_area(data = cmg1[between(cmg1$ml, lower.lg, upper.lg),],
+                          fill = "red", alpha = 0.5) +
+            geom_vline(xintercept = lower.lg, color = "red",
+                       linetype = "dashed") +
+            geom_vline(xintercept = upper.lg, color = "red",
+                       linetype = "dashed")
+    }
+    if(!is.null(eventData.sm)){
+        lower.sm = eventData.sm[,"x"]
+        upper.sm = eventData.sm[,"y"]
+        p = p + geom_area(data = cmg1[between(cmg1$ml, lower.sm, upper.sm),],
+                          fill = "blue", alpha = 0.5) +
+            geom_vline(xintercept = lower.sm, color = "red",
+                       linetype = "dashed") +
+            geom_vline(xintercept = upper.sm, color = "red",
+                       linetype = "dashed")
+    }
+    ggplotly(p)
+})
+```
+
+Row {data-height=650}
+-------------------------------------
+
+### Large HDL 
+
+```{r}
+
+plot_ly(x = colnames(lghdl_mat), y = rownames(lghdl_mat), 
+        z = lghdl_mat, type = "heatmap", source = "large",
+        colors = colorRamp(colors = rev(brewer.pal(11,"RdBu")))) %>%
+    layout(
+        xaxis = list(
+            title = "lower cutoff (ml)"
+        ),
+        yaxis = list(
+            title = "upper cutoff (ml)"
+        )
+    )
+```
+
+### Small HDL
+
+```{r}
+plot_ly(x = colnames(smhdl_mat), y = rownames(smhdl_mat),
+        z = smhdl_mat, type = "heatmap", source = "small",
+        colors = colorRamp(colors = rev(brewer.pal(11,"RdBu")))) %>%
+    layout(
+        xaxis = list(
+            title = "lower cutoff (ml)"
+        ),
+        yaxis = list(
+            title = "upper cutoff (ml)"
+        )
+    )
+```
+
+Row {data-height=650}
+-------------------------------------
+
+###
+
+```{r}
+renderPlotly({
+    eventData = event_data(event = "plotly_click", source = "large")
+    if(is.null(eventData)){
+        p = ggplot(data.frame(x=1, y=1)) +
+            geom_text(aes(x, y, label = "Click On the heatmap\nabove to see something")) +
+            theme_bw() +
+            theme(
+                axis.title = element_blank(),
+                axis.text  = element_blank(),
+                axis.ticks = element_blank(),
+                panel.grid = element_blank()
+            )
+        return(ggplotly(p))
+    }
+    lower = eventData[,"x"]
+    upper = eventData[,"y"]
+    auc = sapply(auc_list, function(auc1){
+            auc1 %>%
+                filter(between(ml, lower, upper)) %>%
+                sum
+        })
+    p = data.frame(
+        auc = auc,
+        hdl_lg = hdl_lg
+    ) %>%
+        ggplot(aes(auc, hdl_lg)) +
+        geom_point(size=3, alpha = 0.75) +
+        stat_smooth(method = "lm") +
+        theme_bw()
+    ggplotly(p)
+})
+```
+
+###
+
+```{r}
+renderPlotly({
+    eventData = event_data(event = "plotly_click", source = "small") 
+    if(is.null(eventData)){
+        p = ggplot(data.frame(x=1, y=1)) +
+            geom_text(aes(x, y, label = "Click On the heatmap\nabove to see something")) +
+            theme_bw() +
+            theme(
+                axis.title = element_blank(),
+                axis.text  = element_blank(),
+                axis.ticks = element_blank(),
+                panel.grid = element_blank()
+            )
+        return(ggplotly(p))
+    }
+    lower = eventData[,"x"]
+    upper = eventData[,"y"]
+    auc = sapply(auc_list, function(auc1){
+            auc1 %>%
+                filter(between(ml, lower, upper)) %>%
+                sum
+        })
+    p = data.frame(
+        auc = auc,
+        hdl_lg = hdl_lg
+    ) %>%
+        ggplot(aes(auc, hdl_lg)) +
+        geom_point(size=3, alpha = 0.75) +
+        stat_smooth(method = "lm") +
+        theme_bw()
+    ggplotly(p)
+})
+```
+
+Row {data-height=650}
+-------------------------------------
+
+###
+
+```{r}
+plot_ly(x = colnames(lghdl_mat), y = rownames(lghdl_mat), 
+        z = lghdl_mat, source = "large") %>%
+    add_surface()
+```
+
+###
+
+```{r}
+plot_ly(x = colnames(smhdl_mat), y = rownames(smhdl_mat), 
+        z = smhdl_mat, source = "small") %>%
+    add_surface()
+```
+
