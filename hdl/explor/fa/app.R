@@ -11,7 +11,7 @@ ui <- dashboardPage(
     dashboardHeader(title = "HDL Lipidome"),
     dashboardSidebar(
         sidebarMenu(
-            menuItem("Home", icon = icon("home"), 
+            menuItem("Home", icon = icon("home"), newtab = FALSE,
                      href = "http://www.chenghaozhu.net/studies/egg/docs/hdl.html")
         ),
         checkboxInput("fa", "Exclude FA?", value = FALSE),
