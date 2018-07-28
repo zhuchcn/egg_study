@@ -1,0 +1,44 @@
+---
+title: 'Table: HDL Functions and Proteins'
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning =F, error = F, message=F)
+```
+
+```{r}
+pkgs = c('dplyr','stringr','reshape2','tibble', "DT", "Metabase", "knitr", "kableExtra")
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("../Rdata/fct_precalc.Rdata")
+```
+
+Table: Pre- and post-treatment change of HDL functions and HDL assiciated proteins on yolk-free substitute and whole egg.
+
+```{r}
+df = cbind(hdl_function$sample_table, t(hdl_function$conc_table)) %>%
+    select(-`TX Order`) %>%
+    melt(id.var = c("Subject", "Treatment", "Timepoint"),
+         variable.name = "fct") %>%
+    dcast(Subject + Treatment + fct ~ Timepoint) %>%
+    mutate(change = post - pre) %>%
+    group_by(Treatment, fct) %>%
+    summarize(mean = mean(change, na.rm = T),
+              sd   = sd  (change, na.rm = T),
+              se   = sd/sqrt(length(change))) %>%
+    melt(id.var = c("Treatment", "fct")) %>%
+    dcast(fct ~ Treatment + variable)
+
+kable(df, 
+      col.names = c("Variable", rep(c("mean", "sd", "se"), 2)), 
+      digits = 3) %>%
+    kable_styling("striped", full_width = FALSE) %>%
+    add_header_above(c("", "Substitute" = 3, "Whole Egg" = 3))
+```
