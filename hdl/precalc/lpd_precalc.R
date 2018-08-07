@@ -8,40 +8,56 @@ for(pkg in pkgs){
 ## --------------------- load data -------------------------
 setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/data")
 load("hdl.Rdata"); load("diet.Rdata")
-
-lpd_conc = lipidome
-lpd_prop = transform_by_sample(lipidome, function(x) x/sum(x))
-lpd_prt  = transform_by_feature(lipidome, function(x)
+## -------- get molecular weight -----------------------------------------------
+data("wcmc_adduct")
+molwt = as.numeric(rep(NA, nfeatures(lipidome)))
+for(i in 1:nfeatures(lipidome)){
+    species = str_split(lipidome$feature_data$Species[i], "\\_")[[1]]
+    species = gsub("\\[", "", species)
+    species = gsub("\\]", "", species)
+    species = gsub("\\+$", "", species)
+    species = gsub("\\-$", "", species)
+    species = species[species %in% rownames(wcmc_adduct)]
+    species = species[which.min(1 * wcmc_adduct[species,]$Mult + wcmc_adduct[species,]$Mass)]
+    if(length(species) == 0) next
+    mz = as.numeric(str_split(lipidome$feature_data$`m/z`[i], "\\_")[[1]])
+    mz = mz[which.min(mz)]
+    molwt[i] = mz2molwt(species, mz)
+}
+lipidome$feature_data$molwt = molwt
+## -------- summarize ----------------------------------------------------------
+lpd_conc = subset_features(lipidome, lipidome$feature_data$class != "FA")
+lpd_prop = transform_by_sample(lpd_conc, function(x) x/sum(x))
+lpd_prt  = transform_by_feature(lpd_conc, function(x)
     x/conc_table(hdl_function)["hdl_protein",])
-lpd_hdl_apoa1 = transform_by_feature(lipidome, function(x)
-    x/hdl_function$conc_table["ApoA1-HDL",])
-lpd_ttl_apoa1 = transform_by_feature(lipidome, function(x)
-    x/hdl_function$conc_table["ApoA1-HDL",] * clinical$conc_table["Apo A1 mg/dl",])
 
 lpd_class_conc = summarize_features(lpd_conc, feature_var = "class")
 lpd_class_prop = summarize_features(lpd_prop, feature_var = "class")
 lpd_class_prt  = transform_by_feature(lpd_class_conc, function(x) 
     x/conc_table(hdl_function)["hdl_protein",])
-lpd_class_hdl_apoa1 = transform_by_feature(lpd_class_conc, function(x) 
-    x/conc_table(hdl_function)["ApoA1-HDL",])
-lpd_class_ttl_apoa1 = transform_by_feature(lpd_class_conc, function(x)
-    x/hdl_function$conc_table["ApoA1-HDL",] * clinical$conc_table["Apo A1 mg/dl",])
 
+lpd_mol = transform_by_sample(lpd_conc, function(x) x/lpd_conc$feature_data$molwt)
+lpd_eod = summarize_EOD(lpd_mol, name = "Annotation", class = "class")
+lpd_acl = summarize_ACL(lpd_mol, name = "Annotation", class = "class")
+lpd_odd = summarize_odd_chain(lpd_mol, name = "Annotation", class = "class")
+lpd_ratio = summarize_lipid_ratios(lpd_mol, name = "Annotation", class = "class")
 
 lipidome_set = list(
     class = list(
         Concentration = lpd_class_conc,
         Proportion    = lpd_class_prop,
-        Adj_protein   = lpd_class_prt,
-        Adj_hdl_apoa1 = lpd_class_hdl_apoa1,
-        Adj_ttl_apoa1 = lpd_class_ttl_apoa1
+        Adj_protein   = lpd_class_prt
     ),
     feature = list(
         Concentration = lpd_conc,
         Proportion    = lpd_prop,
-        Adj_protein   = lpd_prt,
-        Adj_hdl_apoa1 = lpd_hdl_apoa1,
-        Adj_ttl_apoa1 = lpd_ttl_apoa1
+        Adj_protein   = lpd_prt
+    ),
+    summarize = list(
+        EOD = lpd_eod,
+        ACL = lpd_acl,
+        "Odd Chain" = lpd_odd,
+        "Lipid Ratios" = lpd_ratio
     )
 )
 

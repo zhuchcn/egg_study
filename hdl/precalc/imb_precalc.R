@@ -1,5 +1,5 @@
 ## -------------------- load packages -----------------------
-pkgs = c('dplyr','stringr','reshape2','tibble',"Metabase")
+pkgs = c('dplyr','stringr','reshape2','tibble',"Metabase", "MatCorR")
 for(pkg in pkgs){
     library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
             character.only=TRUE)
@@ -7,8 +7,8 @@ for(pkg in pkgs){
 
 ## --------------------- load data -------------------------
 rm(list=ls())
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/data")
-load("hdl.Rdata")
+setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/data")
+load("hdl.Rdata"); load("diet.Rdata")
 
 ## --------------------- limma ----------------------------
 design = model.matrix(
@@ -17,6 +17,18 @@ design = model.matrix(
 )
 limma_result = mSet_limma(ion_morbility, design, coef = 23, p.value = 23)
 
+## -------- corr ---------------------------------------------------------------
+methods = c("pearson", "spearman", "kendall", "lm")
+design2 = model.matrix(data = as(sample_table(lipidome), "data.frame"), 
+                       ~Subject + 1)
+
+corr_fct = MatCorPack(X=conc_table(hdl_function), Y=conc_table(ion_morbility),
+                      methods = methods, design = design2)
+corr_clinical = MatCorPack(X=conc_table(clinical), Y=conc_table(ion_morbility),
+                           methods = methods, design = design2)
+
 ## -------------------- save ----------------------------
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/hdl/Rdata")
-save(ion_morbility,limma_result, file="imb_precalc.Rdata")
+setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/hdl/Rdata")
+save(ion_morbility,limma_result, corr_fct, corr_clinical, 
+     hdl_function, clinical,
+     file="imb_precalc.Rdata")
