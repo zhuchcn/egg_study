@@ -11,7 +11,13 @@ source("ui/sidebar.R")
 source("ui/body.R")
 
 ui <- dashboardPage(
-    header = dashboardHeader(title = "Egg Study"),
+    header = dashboardHeader(
+        title = tags$a(
+            href="http://www.chenghaozhu.net/studies/egg/docs/hdl.html", 
+            style="color:inherit;",
+            "Egg Study"
+        )
+    ),
     sidebar = sidebar,
     body = body
 )
