@@ -7,7 +7,7 @@ for(pkg in pkgs){
 
 ## --------------------- load data -------------------------
 rm(list=ls())
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/data")
+setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/data")
 load("diet.Rdata")
 pdata = as(clinical$sample_table, "data.frame")
 
@@ -16,6 +16,6 @@ design = model.matrix(data = pdata, ~Treatment * Timepoint + Subject + 1)
 limma_result = mSet_limma(clinical, design, coef = 23, p.value = 23)
 
 ## --------------------- save ----------------------------
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/diet/Rdata")
+setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/diet/Rdata")
 save(clinical, limma_result,
      file = "clinical_precalc.Rdata")
