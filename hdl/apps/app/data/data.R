@@ -5,18 +5,21 @@ imb = new.env()
 load("../../../Rdata/imb_precalc.Rdata", envir = imb)
 fct = new.env()
 load("../../../Rdata/fct_precalc.Rdata", envir = fct)
+cli = new.env()
+load("../../../../diet/Rdata/clinical_precalc.Rdata", envir = cli)
 
 data = list(
     data = list(
         lpd = lpd$lipidome_set,
         imb = imb$ion_morbility,
         fct = fct$hdl_function,
-        cli = lpd$clinical
+        cli = cli$clinical
     ),
     limma = list(
         lpd = lpd$limma_list,
         imb = imb$limma_result,
-        fct = fct$limma_result
+        fct = fct$limma_result,
+        cli = cli$limma_result
     ),
     corr = list(
         lpd = list(

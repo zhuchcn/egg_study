@@ -77,6 +77,7 @@ body = dashboardBody(
         corrTabGen("imb_cli"),
         boxplotTabGen("fct_boxplot"),
         corrTabGen("fct_fct"),
-        corrTabGen("fct_cli")
+        corrTabGen("fct_cli"),
+        boxplotTabGen("cli_boxplot")
     )
 )

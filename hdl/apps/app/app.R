@@ -11,13 +11,7 @@ source("ui/sidebar.R")
 source("ui/body.R")
 
 ui <- dashboardPage(
-    header = dashboardHeader(
-        title = tags$a(
-            href="http://www.chenghaozhu.net/studies/egg/docs/hdl.html", 
-            style="color:inherit;",
-            "Egg Study"
-        )
-    ),
+    header = dashboardHeader(title = "Egg Study"),
     sidebar = sidebar,
     body = body
 )
@@ -38,6 +32,8 @@ server <- function(input, output) {
     source("server/fct/boxplot.R",  local = TRUE)
     source("server/fct/corr_fct.R", local = TRUE)
     source("server/fct/corr_cli.R", local = TRUE)
+    
+    source("server/cli/boxplot.R",  local = TRUE)
 }
 
 # Run the application 

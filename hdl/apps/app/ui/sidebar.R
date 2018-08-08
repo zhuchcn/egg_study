@@ -1,4 +1,8 @@
 sidebar = dashboardSidebar(
+    sidebarMenu(
+        menuItem("Home", icon = icon("home"), newtab = FALSE,
+                 href = "http://www.chenghaozhu.net/studies/egg/docs/hdl.html")
+    ),
     uiOutput("VarsInput"),
     sidebarMenu(
         id = "sidebar",
@@ -21,6 +25,10 @@ sidebar = dashboardSidebar(
             menuSubItem("Boxplot", tabName = "fct_boxplot"),
             menuSubItem("vs HDL Function", tabName = "fct_fct"),
             menuSubItem("vs Clinical Values", tabName = "fct_cli")
+        ),
+        menuItem(
+            icon = icon("caret-right"), "Clinical Values",
+            menuSubItem("Boxplot", tabName = "cli_boxplot")
         )
     )
 )
