@@ -13,10 +13,7 @@ pdata = as(clinical$sample_table, "data.frame")
 
 ## -------------------- linear model ----------------------
 design = model.matrix(data = pdata, ~Treatment * Timepoint + Subject + 1)
-limma_result = mSet_limma(
-    transform_by_sample(clinical, function(x) log2(x+1)), 
-    design, coef = 23, p.value = 23
-)
+limma_result = mSet_limma(clinical, design, coef = 23, p.value = 23)
 
 ## --------------------- save ----------------------------
 setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/diet/Rdata")
