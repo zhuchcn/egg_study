@@ -1,0 +1,38 @@
+---
+title: "The Effect of Treatment Order on HDL Function"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FALSE)
+```
+
+```{r}
+pkgs = c("dplyr", "stringr", "reshape2", "Metabase", "knitr", "kableExtra")
+for(pkg in pkgs) {
+    library(pkg, character.only = TRUE, quietly = TRUE, verbose = FALSE,
+            warn.conflicts = FALSE)
+}
+load("../explor/Rdata/precalc.Rdata")
+```
+
+```{r, include = FALSE}
+design = model.matrix(
+    data = as(hdl_function$sample_table, "data.frame"),
+    ~ Treatment*Timepoint*`TX Order` + Subject + 1
+)
+design = design[,-c(25,26)]
+fit = mSet_limma(hdl_function, design, coef = 25, p.value = 25)
+```
+
+The linear model used is:
+
+y ~ Treatment + Timepoint + Treatment x Timepoint + Treatment &#x2217 Timepoint &#x2217 TX Order + Subject + 1
+
+The statistic below is whether the **Treatment &#x2217; Timepoint &#x2217; TX Order** coefficient is different from 0.
+
+```{r}
+kable(fit) %>%
+    kable_styling(full_width = TRUE, bootstrap_options = "striped")
+```
