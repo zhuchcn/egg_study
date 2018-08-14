@@ -1,0 +1,133 @@
+---
+title: "Treatment, Order, and Treatment*Order Interaction"
+output:
+    flexdashboard::flex_dashboard:
+        navbar:
+            - { title: "Home", 
+                href: "../../../../docs/hdl.html", 
+                align: left }
+        source_code: embed
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning =F, error = F, message=F)
+```
+
+```{r}
+pkgs = c("dplyr", "stringr", "reshape2", "tibble", "Metabase", "plotly", "DT", "ggsci")
+for(pkg in pkgs) {
+    library(pkg, character.only = TRUE, quietly = TRUE, verbose = FALSE,
+            warn.conflicts = FALSE)
+}
+```
+
+```{r}
+load("../../../data/hdl.Rdata")
+```
+
+```{r}
+lpd = transform_by_sample(lipidome, function(x) x/sum(x))
+design = model.matrix(
+    data = as(lpd$sample_table, "data.frame"), 
+    ~ Treatment*Timepoint + Subject + 1
+)
+limma_list = list(
+    Treatment = mSet_limma(lpd, design, coef = 2, p.value = 2),
+    Order = mSet_limma(lpd, design, coef = 3, p.value = 3),
+    "Treatment*Order Interaction" = mSet_limma(lpd, design, coef = 23, p.value = 3)
+)
+```
+
+Inputs {.sidebar}
+------------------------
+
+```{r input panel}
+inputPanel(
+    selectInput('coef', "Select a coefficient:",
+                choices = names(limma_list), selected = names(limma_list)[1])
+)
+```
+
+<div class="shiny-input-panel">
+<div class="shiny-flow-layout">
+When you choose "Treatment", it only tells you whether egg and sub are different and will collapse pre and post together.
+<br /><br />
+When you choose "Order", it only tells you whether pre and post are different and will collapse egg white (sub) and egg together.
+<br /><br />
+When you choose "Treatment * Order Interaction", now it compares the egg pre egg post vs white pre and white post.
+<br />
+</div>
+</div>
+
+
+Column 
+-------------------------------------
+    
+### Boxplot
+
+```{r}
+renderPlotly({
+    if (input$coef == "Treatment") {
+        p = plot_boxplot(lpd, 
+                     x = "Treatment", 
+                     feature = feature_selector(),
+                     line = "Subject",
+                     color = "Subject",
+                     color.pal = pal_jama()(7)) +
+        labs(x = "")
+    } else if (input$coef == "Timepoint") {
+        p = plot_boxplot(lpd, 
+                     x = "Timepoint", 
+                     feature = feature_selector(),
+                     line = "Subject",
+                     color = "Subject",
+                     color.pal = pal_jama()(7)) +
+        labs(x = "")
+    } else {
+        p = plot_boxplot(lpd, 
+                     x = "Timepoint", 
+                     feature = feature_selector(),
+                     cols = "Treatment",
+                     line = "Subject",
+                     color = "Subject",
+                     color.pal = pal_jama()(7)) +
+        labs(x = "")
+    }
+    
+    ggplotly(p)
+})
+
+```
+
+
+Column
+-------------------------------------
+
+### Stats Table
+
+```{r}
+stats_table = reactive({
+    limma_list[[input$coef]] %>%
+        rownames_to_column("Feature") %>%
+        arrange(P.Value) %>%
+        mutate(
+            logFC = round(logFC, digits = 3),
+            AveExpr = round(logFC, digits = 3),
+            t = round(t, digits = 3),
+            P.Value = round(P.Value, digits = 3),
+            adj.P.Val = round(adj.P.Val, digits = 3),
+            B = round(B, digits= 3)
+        )%>%
+        column_to_rownames("Feature")
+}) 
+output$stats_table = renderDataTable(
+    stats_table(), 
+    selection = list(mode = "single", selected = 1),
+    server=T
+    )
+feature_selector = reactive({
+    rownames(stats_table())[input$stats_table_rows_selected]
+})
+dataTableOutput("stats_table")
+```
