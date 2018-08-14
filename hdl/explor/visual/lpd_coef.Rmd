@@ -76,7 +76,7 @@ renderPlotly({
                      color = "Subject",
                      color.pal = pal_jama()(7)) +
         labs(x = "")
-    } else if (input$coef == "Timepoint") {
+    } else if (input$coef == "Order") {
         p = plot_boxplot(lpd, 
                      x = "Timepoint", 
                      feature = feature_selector(),
