@@ -10,6 +10,7 @@ sidebar = dashboardSidebar(
             icon = icon("caret-right"), "Lipidome", 
             menuSubItem("Boxplot", tabName = "lpd_boxplot"),
             menuSubItem("Histograms", tabName = "lpd_hist"),
+            menuSubItem("Pie Chart", tabName = "lpd_pie"),
             menuSubItem("vs Ion Morbility", tabName = "lpd_imb"),
             menuSubItem("vs HDL Function", tabName = "lpd_fct"),
             menuSubItem("vs Clinical Values", tabName = "lpd_cli")

@@ -8,22 +8,22 @@ gghist = function(data, x){
 }
 
 output$lpd_hist_pval = renderPlotly({
-    p = gghist(lpd_limma_table(), "P.Value")
+    p = gghist(lpd_limma_table(), "pvalue")
     ggplotly(p)
 })
 
 output$lpd_hist_padj = renderPlotly({
-    p = gghist(lpd_limma_table(), "adj.P.Val")
+    p = gghist(lpd_limma_table(), "padj")
     ggplotly(p)
 })
 
 output$lpd_volcano = renderPlotly({
     p = lpd_limma_table() %>%
         rownames_to_column("Feature") %>%
-        mutate(`P < 0.05` = P.Value < 0.05) %>%
-        ggplot(aes(x = logFC, y = AveExpr, 
-                   Feature = Feature, P.Value = P.Value,
-                   adj.P.Val = adj.P.Val)) +
+        mutate(`P < 0.05` = pvalue < 0.05) %>%
+        ggplot(aes(x = logFC, y = baseMean, 
+                   Feature = Feature, pvalue = pvalue,
+                   padj = padj)) +
         geom_point(aes(color = `P < 0.05`)) +
         scale_color_lancet() +
         theme_bw()

@@ -61,6 +61,22 @@ corrTabGen = function(tabName) {
     )
 }
 
+lpdPieChart = tabItem(
+    tabName = "lpd_pie",
+    fluidRow(
+        column(
+            width = 6,
+            box(width = NULL,
+                tableOutput("lpd_pie_tbl"), height = "100%")
+        ),
+        column(
+            width = 6,
+            box(width = NULL,
+                plotOutput("lpd_pie"))
+        )
+    )
+)
+
 body = dashboardBody(
     tags$head(
         tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
@@ -68,6 +84,7 @@ body = dashboardBody(
     tabItems(
         boxplotTabGen("lpd_boxplot"),
         histTabGen("lpd_hist"),
+        lpdPieChart,
         corrTabGen("lpd_imb"),
         corrTabGen("lpd_fct"),
         corrTabGen("lpd_cli"),

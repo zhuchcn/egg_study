@@ -26,7 +26,8 @@ for(i in 1:nfeatures(lipidome)){
 }
 lipidome$feature_data$molwt = molwt
 ## -------- summarize ----------------------------------------------------------
-lpd_conc = subset_features(lipidome, lipidome$feature_data$class != "FA")
+# lpd_conc = subset_features(lipidome, lipidome$feature_data$class != "FA")
+lpd_conc = lipidome
 lpd_prop = transform_by_sample(lpd_conc, function(x) x/sum(x))
 lpd_prt  = transform_by_feature(lpd_conc, function(x)
     x/conc_table(hdl_function)["hdl_protein",])

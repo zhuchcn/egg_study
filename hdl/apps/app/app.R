@@ -1,5 +1,5 @@
 pkgs = c('dplyr','stringr','reshape2','tibble', 'plotly', 'DT', 'Metabase','ggsci',
-         "shiny", "shinydashboard", "ggmetaplots")
+         "shiny", "shinydashboard", "ggmetaplots", "knitr", "kableExtra")
 for(pkg in pkgs){
     library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
             character.only=TRUE)
@@ -21,6 +21,7 @@ server <- function(input, output) {
     
     source("server/lpd/boxplot.R",  local = TRUE)
     source("server/lpd/hist.R",     local = TRUE)
+    source("server/lpd/pie.R",      local = TRUE)
     source("server/lpd/corr_imb.R", local = TRUE)
     source("server/lpd/corr_fct.R", local = TRUE)
     source("server/lpd/corr_cli.R", local = TRUE)
@@ -28,7 +29,7 @@ server <- function(input, output) {
     source("server/imb/boxplot.R",  local = TRUE)
     source("server/imb/corr_fct.R", local = TRUE)
     source("server/imb/corr_cli.R", local = TRUE)
-    
+
     source("server/fct/boxplot.R",  local = TRUE)
     source("server/fct/corr_fct.R", local = TRUE)
     source("server/fct/corr_cli.R", local = TRUE)

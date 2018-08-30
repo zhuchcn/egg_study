@@ -3,11 +3,9 @@ library(dplyr);library(reshape2);library(stringr)
 library(tibble);library(data.table);library(readxl); 
 library(Metabase)
 
-##%######################################################%##
-#                                                          #
-####                  Part1. Lipidome                   ####
-#                                                          #
-##%######################################################%##
+################################################################################
+##########                      L I P I D O M E                       ##########
+################################################################################
 rm(list = ls())
 setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis")
 file = "raw_data/lipidome/mx 348391_Zhu_CSH-QTOF MSMS_lipidomics_isolated HDL particles_11-2017_submit.xlsx"
@@ -60,11 +58,9 @@ sample_table(lipidome)$Timepoint = design$Timepoint
 sample_table(lipidome)$tx_order = design$`TX Order`
 sample_table(lipidome)$Subject = design$Subject
 sampleNames(lipidome) = gsub("-","",sampleNames(lipidome))
-##%######################################################%##
-#                                                          #
-####                Part2. Ion Morbility                ####
-#                                                          #
-##%######################################################%##
+################################################################################
+##########                 I O N   M O R B I L I T Y                  ##########
+################################################################################
 file = "raw_data/ion_morbility/X3549 Final IM Data Egg Study w order.xls"
 ep_data = read_excel(
     path = file,
@@ -100,11 +96,9 @@ ion_morbility = MultiSet(
 
 
 
-##%######################################################%##
-#                                                          #
-####               Part 3. HDL Functions                ####
-#                                                          #
-##%######################################################%##
+################################################################################
+##########                  H D L   F U N C T I O N                   ##########
+################################################################################
 
 
 # Cholesterol Efflux
@@ -170,11 +164,9 @@ hdl_function = MultiSet(
     experiment_data = MultiExperimentData(experiment_type = "HDL Functions")
 )
 
-##%######################################################%##
-#                                                          #
-####                        Save                        ####
-#                                                          #
-##%######################################################%##
+################################################################################
+##########                          S A V E                           ##########
+################################################################################
 
 path = "data/hdl.Rdata"
 save(lipidome, ion_morbility, hdl_function,

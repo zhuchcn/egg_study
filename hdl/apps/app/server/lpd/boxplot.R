@@ -5,7 +5,7 @@ lpd_limma_table = reactive({
 lpd_limma = reactive({
     lpd_limma_table()%>%
         rownames_to_column("Feature") %>%
-        arrange(P.Value) %>%
+        arrange(pvalue) %>%
         sapply(function(col){
             if(!is.numeric(col)) return(col)
             round(col, digits = 3)
