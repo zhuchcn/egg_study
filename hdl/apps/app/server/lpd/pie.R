@@ -8,9 +8,11 @@ output$lpd_pie_tbl = function(){
         ) %>%
         melt(id.var = c("Treatment", "Timepoint")) %>%
         group_by(Treatment, Timepoint, variable) %>% 
-        dplyr::summarize(value = mean(value)) %>%
+        dplyr::summarize(value = str_c(round(mean(value)/10, 2), " (", 
+                                       round(sd(value)/10, 2), ")")) %>%
+        # need to fix the unit!!
         dcast(variable ~ Treatment + Timepoint) %>%
-        kable(col.names=(c("Lipid Class","Pre", "Post", "Pre", "Post"))) %>%
+        kable(col.names=(c("Lipid Class","Pre (mg/dL)", "Post (mg/dL)", "Pre (mg/dL)", "Post (mg/dL)"))) %>%
         kable_styling(c("striped")) %>%
         add_header_above(c(" " = 1, "Yolk-Free" = 2, "Whole Egg" = 2))
 }
