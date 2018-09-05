@@ -61,32 +61,40 @@ sampleNames(lipidome) = gsub("-","",sampleNames(lipidome))
 ################################################################################
 ##########                 I O N   M O R B I L I T Y                  ##########
 ################################################################################
-file = "raw_data/ion_morbility/X3549 Final IM Data Egg Study w order.xls"
+file = "raw_data/ion_morbility/Corrected IM categories.9.5.18.xlsx"
 ep_data = read_excel(
     path = file,
-    sheet = "X3549 Final IM Data", range = "A1:V81", col_names = T
+    sheet = 1, range = "A1:U81", col_names = T
 )
-fdata = read_excel(
-    path = file,
-    sheet = "Variables", range = "A3:E19"
-) %>% as.data.frame
-pdata = ep_data[,c(1:4,21,22)] %>% as.data.frame
-edata = ep_data[,c(5:20)] %>% as.data.frame %>% t 
-
-fdata$Variable = gsub("_IM","",fdata$Variable)
-fdata = column_to_rownames(fdata,"Variable")
-rownames(edata) = rownames(fdata)
-
-pdata$Timepoint = design$Timepoint
-pdata$Treatment = design$Treatment
-pdata$Subject = design$Subject
-rownames(pdata) = design$sample_id
+# fdata = read_excel(
+#     path = file,
+#     sheet = "Variables", range = "A3:E19"
+# ) %>% as.data.frame
+pdata = ep_data[,c(1:3,5)] %>% 
+    as.data.frame %>%
+    setNames(c("Subject", "Visit", "Treatment", "Timepoint")) %>%
+    mutate(Timepoint = ifelse(grepl("^pre-", Timepoint), "Pre", "Post")) %>%
+    mutate(Subject = factor(Subject),
+           Treatment = factor(Treatment, levels = c("white", "egg")),
+           Timepoint = factor(Timepoint, levels = c("Pre", "Post"))) %>%
+    mutate(sample_id = str_c("Egg", Subject, Visit)) %>% 
+    column_to_rownames("sample_id")
+edata = ep_data[,c(7:21)] %>% as.data.frame %>% t
 colnames(edata) = rownames(pdata)
+
+# fdata$Variable = gsub("_IM","",fdata$Variable)
+# fdata = column_to_rownames(fdata,"Variable")
+# rownames(edata) = rownames(fdata)
+
+# pdata$Timepoint = design$Timepoint
+# pdata$Treatment = design$Treatment
+# pdata$Subject = design$Subject
+# rownames(pdata) = design$sample_id
+# colnames(edata) = rownames(pdata)
 
 ion_morbility = MultiSet(
     conc_table = conc_table(edata),
     sample_table = sample_table(pdata),
-    feature_data = feature_data(fdata),
     experiment_data = MultiExperimentData(experiment_type = "Ion Morbility")
 )
 
