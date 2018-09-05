@@ -61,7 +61,7 @@ sampleNames(lipidome) = gsub("-","",sampleNames(lipidome))
 ################################################################################
 ##########                 I O N   M O R B I L I T Y                  ##########
 ################################################################################
-file = "raw_data/ion_morbility/Corrected IM categories.9.5.18.xlsx"
+file = "raw_data/ion_morbility/1-Corrected IM categories.9.5.18.xlsx"
 ep_data = read_excel(
     path = file,
     sheet = 1, range = "A1:U81", col_names = T
