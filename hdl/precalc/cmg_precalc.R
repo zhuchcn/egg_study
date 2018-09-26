@@ -15,8 +15,7 @@ names(cmg_data) = str_replace(
 )
 
 ## -------- load ion mability data ---------------------------------------------
-setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/data")
-load("hdl.Rdata")
+load("../../data/hdl.Rdata")
 hdl_lg = as.numeric(ion_morbility$edata["HDL_2b",])
 hdl_sm = as.numeric(ion_morbility$edata["HDL_3_2a",])
 
