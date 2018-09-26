@@ -1,10 +1,9 @@
-## ---------------------- load packages -------------------------
+## -------- load packages ------------------------------------------------------
 library(dplyr);library(plyr);library(reshape2);library(stringr)
 library(tibble);library(data.table);library(readxl); library(parallel)
 
-## --------------------  read chromatogram --------------------
-setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/raw_data/chromatograms")
-paths = list.files()
+## -------- read chromatogram --------------------------------------------------
+paths = list.files("../../raw_data/chromatograms/", full.names = TRUE)
 cmg_data = lapply(paths, function(path){
     table = read.delim(path, header = T, skip=2, stringsAsFactors = F,
                        strip.white = T, blank.lines.skip=T)
@@ -15,7 +14,7 @@ names(cmg_data) = str_replace(
     "[1-4]$", LETTERS[as.integer(str_extract(names(cmg_data), "[1-4]$"))]
 )
 
-## -------------------- load ion mability data ----------------
+## -------- load ion mability data ---------------------------------------------
 setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/data")
 load("hdl.Rdata")
 hdl_lg = as.numeric(ion_morbility$edata["HDL_2b",])
@@ -26,7 +25,7 @@ hdl_sm = as.numeric(ion_morbility$edata["HDL_3_2a",])
 # hdl_lg = hdl_lg / hdl_tt
 # hdl_sm = hdl_sm / hsl_tt
 
-## ------------------- auc calculation -------------------
+## -------- auc calculation ----------------------------------------------------
 cmg_list = lapply(cmg_data, function(tbl){
     tbl[1:2] %>%
         na.omit()
@@ -49,7 +48,7 @@ auc_list = lapply(cmg_list, function(cmg){
 # calculate the sum of AUC
 #tAUC = sapply(auc_list, sum)
 
-## -------------------- optimization ----------------------
+## -------- optimization -------------------------------------------------------
 ## small hdl
 lowers = seq(10, 14, by = 0.1)
 uppers = seq(12, 16, by = 0.1)
@@ -98,13 +97,12 @@ lghdl_mat = parSapply(cl, lowers, function(lower){
 rownames(lghdl_mat) = uppers
 colnames(lghdl_mat) = lowers
 
-## ----------------------- save ---------------------------
-setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/hdl/explor")
+## -------- save ---------------------------------------------------------------
 save(lghdl_mat, smhdl_mat, hdl_lg, hdl_sm, auc_list, cmg_data, #hdl_tt,
-     file = "cmg_explor.Rdata")
+     file = "../explor/Rdata/cmg_explor.Rdata")
 
 
-## --------------------------------------------------------
+
 # the goal of the codes below is to find a timepoint/volumn to cut the
 # chromatogram to keep it only after LDL peak. 
 # 

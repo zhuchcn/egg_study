@@ -92,7 +92,7 @@ colnames(edata) = rownames(pdata)
 # rownames(pdata) = design$sample_id
 # colnames(edata) = rownames(pdata)
 
-ion_morbility = MultiSet(
+ion_morbility = MultxSet(
     conc_table = conc_table(edata),
     sample_table = sample_table(pdata),
     experiment_data = MultiExperimentData(experiment_type = "Ion Morbility")
@@ -166,7 +166,7 @@ colnames(fct_data)[7] = "conjugated_diene"
 fct_data$hdl_protein = protein[rownames(fct_data), 3]
 fct_data$`ApoA1-HDL` = apoa1[rownames(fct_data), "ApoA1-HDL"]
 
-hdl_function = MultiSet(
+hdl_function = MultxSet(
     conc_table = conc_table(t(fct_data)),
     sample_table = sample_table(column_to_rownames(design, "sample_id")),
     experiment_data = MultiExperimentData(experiment_type = "HDL Functions")

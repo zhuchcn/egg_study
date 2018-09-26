@@ -25,7 +25,7 @@ pdata = diet_data[,1:5] %>%
     as.data.frame %>%
     column_to_rownames("sample_id")
 colnames(edata) = rownames(pdata)
-diet = MultiSet(
+diet = MultxSet(
     conc_table = conc_table(edata),
     sample_table = sample_table(pdata),
     feature_data = feature_data(fdata),
@@ -67,7 +67,7 @@ crp = read.csv(
 crp = crp[rownames(pdata),]
 edata = rbind(edata, crp)
 
-clinical = MultiSet(
+clinical = MultxSet(
     conc_table = conc_table(edata),
     sample_table = sample_table(pdata),
     experiment_data = MultiExperimentData(experiment_type = "Clinical Values")

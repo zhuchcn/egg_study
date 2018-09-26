@@ -26,7 +26,7 @@ for(pkg in pkgs){
 ```
 
 ```{r}
-load("cmg_explor.Rdata")
+load("../Rdata/cmg_explor.Rdata")
 ```
 
 ```{r}
