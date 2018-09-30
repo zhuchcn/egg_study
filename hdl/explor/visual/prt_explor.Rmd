@@ -110,7 +110,7 @@ count$conc_table %>%
     melt(id.var = c("Subject", "Timepoint", "Responding")) %>%
     group_by(Timepoint, Responding, variable) %>%
     summarize(value = mean(value)) %>%
-    dcast(variable ~ Timepoint + Responding) %>%
+    dcast(variable ~ Responding + Timepoint) %>%
     mutate(Protein = count$feature_data[variable, "Protein"]) %>%
     column_to_rownames("variable") %>%
     datatable()
@@ -129,7 +129,7 @@ log_int$conc_table %>%
     melt(id.var = c("Subject", "Timepoint", "Responding")) %>%
     group_by(Timepoint, Responding, variable) %>%
     summarize(value = mean(value, na.rm = TRUE)) %>%
-    dcast(variable ~ Timepoint + Responding) %>%
+    dcast(variable ~ Responding + Timepoint) %>%
     mutate(Protein = log_int$feature_data[variable, "Protein"]) %>%
     column_to_rownames("variable") %>%
     datatable()
