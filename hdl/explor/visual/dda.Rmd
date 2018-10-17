@@ -307,3 +307,23 @@ renderPlotly({
                showlegend = FALSE)
 })
 ```
+
+```{r}
+renderPlotly({
+    (limma_list[[input$norm]] %>%
+        ggplot() +
+        geom_histogram(aes(pvalue), binwidth = 0.025) +
+        labs(title = "P Value Histogram") +
+        theme_bw()) %>%
+        ggplotly
+})
+```
+
+```{r}
+renderPlotly({
+    limma_list[[input$norm]] %>%
+        ggplot() +
+        geom_point(aes(x = logFC, y = -log(pvalue)), alpha = 0.5) +
+        theme_bw()
+})
+```

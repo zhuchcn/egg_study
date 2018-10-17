@@ -1,8 +1,7 @@
 ---
 title: "Egg Study DIA Exploratory"
-author: "Chenghao Zhu"
-date: "9/28/2018"
 output: html_document
+runtime: shiny
 ---
 
 <style>
@@ -20,7 +19,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, error = FALSE, warning = FA
 
 ```{r}
 pkgs = c("dplyr", "reshape2", "stringr", "tibble", "Metabase", "readr", "DT", 
-         "ggplot2", "plotly")
+         "ggplot2", "plotly", "ggsci")
 for (pkg in pkgs) {
     library(pkg, character.only = TRUE, verbose = FALSE, quietly = TRUE, warn.conflicts = FALSE)
 }
@@ -52,12 +51,10 @@ pdata = data.frame(
     Timepoint = ifelse(
         gsub("^Egg\\d{3}([A-D]{1})", "\\1", colnames(count)) %in% c("A", "C"),
         "Pre", "Post"
-    ),
-    Responding = c("Non-responder", "Responder")[c(1,1,2,2,2,2,1,1,1,1,2,2,1,1,1,1,2,2,2,2)]
+    )
 )
 pdata$Subject = factor(pdata$Subject)
 pdata$Timepoint = factor(pdata$Timepoint, levels = c("Pre", "Post"))
-pdata$Responding = factor(pdata$Responding, levels = c("Non-responder", "Responder"))
 
 count = as.matrix(count)
 rownames(count) = str_c("Feature", str_pad(1:nrow(count), width=3, pad="0"))
@@ -94,6 +91,16 @@ featureNames(log_int) = log_int$feature_data$`Accession Number`
 
 count = subset_samples(count, ! count$sample_table$Subject %in% c(115, 119))
 log_int = subset_samples(log_int, ! log_int$sample_table$Subject %in% c(115, 119))
+
+count$sample_table$Subject = factor(count$sample_table$Subject)
+log_int$sample_table$Subject = factor(log_int$sample_table$Subject)
+
+count = subset_samples(count, sort(sampleNames(count)))
+log_int = subset_samples(log_int, sort(sampleNames(log_int)))
+
+responding = c("Non-Responder", "Responder")[c(1,1,2,2,2,2,2,2,1,1,1,1,1,1,2,2)]
+count$sample_table$Responding = responding
+log_int$sample_table$Responding = responding
 ```
 
 ## Part I Data Cleaning
@@ -170,7 +177,7 @@ barplot(colSums(log_int$conc_table), main = "Log Intensity")
 design = model.matrix(data = as(count$sample_table, "data.frame"), 
                       ~Responding * Timepoint + Subject + 1)
 # de = mSet_deseq(count, design, result = "RespondingResponder")
-lm = mSet_limma(log_int, design, function(x){x}, coef = 13, p.value = 13) %>%
+lm = mSet_limma(log_int, design, I, coef = 11, p.value = 11) %>%
     rownames_to_column("Access Number") %>%
     mutate(Protein = log_int$feature_data$Protein)
 ```
@@ -196,7 +203,7 @@ Vocano plot. Only one protein, Anthrex toxin receptor 1, has a p value < 0.05. N
 (ggplot(lm) +
     geom_point(aes(logFC, -log(pvalue), `Access Number`=`Access Number`, Protein=Protein), 
                color = "white", 
-               fill = "gray17", shape=21, size=3) +
+               fill = "gray17", shape=21, size=3, alpha = 0.75) +
     theme_bw()) %>%
     ggplotly
 ```
@@ -204,20 +211,39 @@ Vocano plot. Only one protein, Anthrex toxin receptor 1, has a p value < 0.05. N
 Below is the statistic result for each protein. 
 
 ```{r}
-lm %>%
+lm = lm %>%
     arrange(pvalue) %>%
     select(`Access Number`, Protein, baseMean, logFC, stat, pvalue, padj) %>%
     sapply(function(x){
         if(is.character(x)) return(x)
         round(x, 3)
-    }) %>%
-    datatable()
+    }) %>% as.data.frame %>%
+    column_to_rownames("Access Number")
+output$lm = renderDT(
+    lm,
+    selection = list(mode = "single", selected = 1),
+    server=T
+)
+DTOutput("lm")
 ```
 
 Boxplot of Anthrax toxin receptor 1
 
 ```{r}
-(plot_boxplot(log_int, feature = "sp|Q9H6X2|ANTR1_HUMAN",x = "Timepoint", cols = "Responding", line = "Subject", color = "Subject") +
-    labs(title = "Anthrax toxin receptor 1")) %>%
-    plotly::ggplotly()
+boxplot_selector = reactive({
+    rownames(lm)[input$lm_rows_selected]
+})
+
+output$boxplot = renderPlotly({
+    p = plot_boxplot(log_int, 
+                     x = "Timepoint", 
+                     feature = boxplot_selector(),
+                     cols = "Responding",
+                     line = "Subject",
+                     color = "Subject",
+                     color.pal = pal_lancet()(9)) +
+        labs(x = "")
+    ggplotly(p)
+})
+plotlyOutput("boxplot")
 ```
