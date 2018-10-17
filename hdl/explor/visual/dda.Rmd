@@ -1,0 +1,309 @@
+---
+title: "DDA Proteome"
+author: "Chenghao Zhu"
+date: "10/16/2018"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE)
+```
+
+```{r}
+pkgs = c("dplyr","reshape2","tibble","stringr","readr","ggplot2","Metabase",
+        "DT","plotly", "knitr", "kableExtra", "ggsci", "readxl")
+for(pkg in pkgs)
+    library(pkg, character.only = TRUE, warn.conflicts = FALSE, verbose = FALSE,
+            quietly = TRUE)
+```
+
+```{r}
+## -------- read data ----------------------------------------------------------
+file = "../../../raw_data/proteome/proteinGroups.txt"
+data = read_tsv(file)
+data = data[!is.na(data$`Protein names`),] %>%
+    filter(!grepl("Keratin", `Fasta headers`))
+data = as.data.frame(data)
+rownames(data) = paste0(
+    "Feat",
+    str_pad(1:nrow(data), pad = "0", width = 4)
+)
+## -------- split data ---------------------------------------------------------
+fdata = data[c('Protein IDs', 
+               'Majority protein IDs', 
+               'Peptide counts (all)', 
+               'Peptide counts (razor+unique)', 
+               'Peptide counts (unique)', 
+               'Protein names', 
+               'Gene names', 
+               'Fasta headers', 
+               'Mol. weight [kDa]', 
+               'Sequence length', 
+               'Sequence lengths', 
+               'Q-value', 
+               'Score')]
+iBAQ = data[grepl("^iBAQ [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+intensity = data[grepl("^Intensity [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+LFQ = data[grepl("^LFQ intensity [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+## -------- clean feature data -------------------------------------------------
+fdata$accession = gsub("_HUMAN$", "",
+                       str_split_fixed(fdata$`Fasta headers`, " ", n=2)[,1])
+fdata$protein = str_split_fixed(
+    str_split_fixed(fdata$`Fasta headers`, "OS=", n=2)[,1],
+    " ", n=2)[,2]
+fdata$species = gsub("^.+OS=(.+?) [A-Z]{2}=.+$", "\\1", fdata$`Fasta headers`)
+## -------- make sample data ---------------------------------------------------
+sample_id = toupper(gsub(".+Lisa_(\\d{3}[ABCDc])","\\1", colnames(intensity)))
+pdata = data.frame(
+    row.names = paste0("Egg", sample_id),
+    Subject = str_sub(sample_id, 1,3),
+    Timepoint = ifelse(grepl("\\d{3}[AC]", sample_id), "Pre", "Post") %>%
+        factor(levels = c("Pre", "Post")),
+    Responding = c("Non-responder", "Responder")[c(1,1,2,2,2,2,1,1,1,1,2,2,1,1,1,1,2,2,2,2)]
+)
+
+## -------- mSet ---------------------------------------------------------------
+colnames(iBAQ) = rownames(pdata)
+iBAQ = ProteomicsSet(
+    conc_table = conc_table(as.matrix(iBAQ)),
+    sample_table = sample_table(pdata),
+    feature_data = feature_data(fdata)
+)
+
+colnames(LFQ) = rownames(pdata)
+LFQ = ProteomicsSet(
+    conc_table = conc_table(as.matrix(LFQ)),
+    sample_table = sample_table(pdata),
+    feature_data = feature_data(fdata)
+)
+
+colnames(intensity) = rownames(pdata)
+intensity = ProteomicsSet(
+    conc_table = conc_table(as.matrix(intensity)),
+    sample_table = sample_table(pdata),
+    feature_data = feature_data(fdata)
+)
+## -------- remove 115 and 119 -------------------------------------------------
+iBAQ = subset_samples(iBAQ, !iBAQ$sample_table$Subject %in% c(115, 119))
+LFQ = subset_samples(LFQ, !LFQ$sample_table$Subject %in% c(115, 119))
+intensity = subset_samples(intensity, !intensity$sample_table$Subject %in% c(115, 119))
+
+iBAQ$sample_table$Subject = factor(iBAQ$sample_table$Subject)
+LFQ$sample_table$Subject = factor(LFQ$sample_table$Subject)
+intensity$sample_table$Subject = factor(intensity$sample_table$Subject)
+```
+
+## 1. Raw data
+
+MaxQuant exported a serious of `.txt` files as each one is a single step during the MS/MS data processing, library search, and quantification algorithm. In this analysis, the file named `proteinGroup.txt` was used, and this is recommended by Tony. Below is a list of all proteins reported in this file.
+
+In the dropdown manue, select 1000 to see all the proteins in one page.
+
+```{r}
+intensity$feature_data %>%
+    select(c(protein, `Sequence length`, `Mol. weight [kDa]`, `Q-value`, Score)) %>%
+    datatable(rownames = FALSE, options = list(lengthMenu = c(10, 50, 100, 10000)))
+```
+
+In the `proteinGroups.txt` file, Tony exported different quantification algorithms and variables from the `MaxQuant`. Each of the variables below is a matrix of $n \times m$ as $n$ is the number of sample, while $m$ is the number of protein.
+
++ **Sequence coverage**: Percentage of the sequence that is covered by the identified peptides in this sample of the longest protein sequence contained within the group
++ **Intensity**: Summed up eXtracted Ion Current (XIC) of all isotopic clusters associated with the identified AA sequence. In case of a labeled experiment this is the total intensity of all the isotopic patterns in the label cluster.
++ **iBAQ**
++ **LFQ**
++ **MS/MS count**
+
+The `proteinGroups.txt` also contains additional information below that indicates the quality of either the identification or quantification of this protein.
+
++ **Q-value**: This is the ratio of reverse to forward protein groups.
++ **Score**: Protein score which is derived from peptide posterior error (PEP) probabilities.
+
+Here is the link to the ResearchGate post which explains the difference between LFQ and iBAQ: 
+https://www.researchgate.net/post/What_is_the_difference_between_LFQ_intensity_and_plain_intensity
+
+Tony also provided this paper below about LFQ although I didn't get a chance to read this.
+https://www.ncbi.nlm.nih.gov/pubmed/24942700
+
+More comparisons of *label-free quantification* methods:
+https://www.sciencedirect.com/science/article/pii/S2212968514000403
+https://www.sciencedirect.com/science/article/pii/S1874391912004861
+
+The graph below shows the relationship between `intensity`, `iBAQ`, and `LFQ`. It is clear that there is a linear relation ship between `intensity` and `iBAQ`, but less with `LFQ`, because of differnet normalization method used by `LFQ`.
+
+```{r}
+data.frame(
+    feature = featureNames(intensity),
+    iBAQ = melt(iBAQ$conc_table)$value,
+    LFQ = melt(LFQ$conc_table)$value,
+    intensity = melt(intensity$conc_table)$value
+) %>%
+    melt(id.var = c("feature","intensity")) %>%
+    ggplot(aes(value,intensity)) +
+    geom_point(alpha = 0.5) +
+    facet_grid(~variable, scales = "free_x") +
+    labs(x = "" ) +
+    theme_bw() 
+```
+
+# 2. Q-value
+
+Below is a histogram of the Q-values. The distribution is very divergent, because the Q-value of most proteins are very samll, and some are vary large, while few of them a in the middle. 
+
+```{r}
+intensity$feature_data %>%
+    ggplot() +
+    geom_histogram(aes(`Q-value`), bins = 40) +
+    labs(title = "All proteins")
+```
+
+The distribution is more clear when we remove the ones with Q-values equal to 1.
+
+```{r}
+intensity$feature_data %>%
+    filter(`Q-value` != 1) %>%
+    ggplot() +
+    geom_histogram(aes(`Q-value`), bins = 40) +
+    labs(title = "Remove Q-value = 1")
+```
+
+```{r}
+intensity = subset_features(intensity, intensity$feature_data$`Q-value` <= 0.001)
+LFQ = subset_features(LFQ, LFQ$feature_data$`Q-value` <= 0.001)
+iBAQ = subset_features(iBAQ, iBAQ$feature_data$`Q-value` <= 0.001)
+```
+
+So here I removed all the proteins with Q-values larger than 0.001. And after that, the number of proteins become `r nfeatures(intensity)`
+
+# 3. Zeros
+
+The graph below shows the number of zeros in each sample. Each sample has quit a few proteins not detected.
+
+```{r}
+(data.frame(nzero = apply(intensity$conc_table, 2, function(x) sum(x == 0)),
+           sample = sampleNames(intensity)) %>%
+    ggplot() +
+    geom_col(aes(x = sample, y = nzero)) +
+    labs(y = "Number of Zeros", x = "") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))) %>%
+    ggplotly
+```
+
+The graph below shows the count of proteins with different zeros observed. So here I removed all the features with more than 4 zeros.
+
+```{r}
+(data.frame(nzero = apply(intensity$conc_table, 1, function(x) sum(x == 0))) %>%
+    ggplot() +
+    geom_bar(aes(x = nzero)) +
+    theme_bw()) %>%
+    ggplotly
+```
+
+```{r}
+intensity = subset_features(
+    intensity, apply(intensity$conc_table, 1, function(x) sum(x == 0) < 5))
+iBAQ = subset_features(iBAQ, featureNames(intensity))
+LFQ = subset_features(LFQ, featureNames(intensity))
+```
+
+# 4. Linear Model
+
+Here I fit linear models to the data, using intensity, LFQ, and iBAQ. The model used is below, although I'm not 100% sure whether this is the best model to use:
+
+$$ \sim Resonding + Timepoint + Responding \times Timepoint + Subject + 1 $$
+
+The coefficient of the Responding and Timepoint interaction was tested for significance.
+
+```{r}
+prt = list(
+    intensity = intensity,
+    LFQ = LFQ,
+    iBAQ = iBAQ
+)
+design = model.matrix(data = as(prt$intensity$sample_table, "data.frame"), 
+                      ~Responding * Timepoint + Subject + 1)
+
+limma_list = lapply(prt, function(data)
+        mSet_limma(data, design, coef = 11, p.value = 11))
+```
+
+```{r}
+inputPanel(
+    selectInput("norm", "Select a Quantification Method:",
+                choices = names(limma_list), selected = "LFQ")
+)
+```
+
+
+```{r}
+limma_table = reactive({
+    limma_list[[input$norm]] %>%
+        rownames_to_column("Feature") %>%
+        mutate(protein = prt[[input$norm]]$feature_data$protein) %>%
+        select(Feature, protein, baseMean, logFC, stat, pvalue, padj) %>%
+        arrange(pvalue) %>%
+        sapply(function(col){
+            if(!is.numeric(col)) return(col)
+            round(col, digits = 3)
+        }) %>%
+        as.data.frame %>%
+        column_to_rownames("Feature")
+}) 
+
+output$limma = renderDT(
+    limma_table(), 
+    selection = list(mode = "single", selected = 1),
+    server=T
+)
+
+```
+
+```{r}
+dataTableOutput("limma")
+```
+
+```{r}
+boxplot_selector = reactive({
+    rownames(limma_table())[input$limma_rows_selected]
+})
+
+output$boxplot = renderPlotly({
+    mset = prt[[input$norm]]
+    p = plot_boxplot(mset, 
+                     x = "Timepoint", 
+                     feature = boxplot_selector(),
+                     cols = "Responding",
+                     line = "Subject",
+                     color = "Subject",
+                     color.pal = pal_lancet()(9)) +
+        labs(x = "")
+    ggplotly(p)
+})
+plotlyOutput("boxplot")
+```
+
+```{r}
+inputPanel(
+    checkboxInput("removeAlb", "Remove Albumin", value = FALSE)
+)
+```
+
+```{r, fig.width = 10}
+renderPlotly({
+    df = data.frame(
+        protein = prt[[input$norm]]$feature_data$protein,
+        value = rowMeans(prt[[input$norm]]$conc_table)
+)
+    if(input$removeAlb)
+        df = filter(df, !grepl("albumin", protein))
+    
+    df %>%
+        arrange(desc(value)) %>%
+        mutate(protein = factor(protein, level = protein)) %>%
+        plot_ly(labels = ~protein, values = ~value, type = 'pie', textinfo = "none") %>%
+        layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+               yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+               showlegend = FALSE)
+})
+```

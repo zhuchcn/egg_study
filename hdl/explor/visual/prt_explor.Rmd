@@ -53,7 +53,7 @@ pdata = data.frame(
         gsub("^Egg\\d{3}([A-D]{1})", "\\1", colnames(count)) %in% c("A", "C"),
         "Pre", "Post"
     ),
-    Responding = c(rep("Non-responder", 10), rep("Responder", 10))
+    Responding = c("Non-responder", "Responder")[c(1,1,2,2,2,2,1,1,1,1,2,2,1,1,1,1,2,2,2,2)]
 )
 pdata$Subject = factor(pdata$Subject)
 pdata$Timepoint = factor(pdata$Timepoint, levels = c("Pre", "Post"))
@@ -91,6 +91,9 @@ log_int = ProteomicsSet(
 
 featureNames(count) = count$feature_data$`Accession Number`
 featureNames(log_int) = log_int$feature_data$`Accession Number`
+
+count = subset_samples(count, ! count$sample_table$Subject %in% c(115, 119))
+log_int = subset_samples(log_int, ! log_int$sample_table$Subject %in% c(115, 119))
 ```
 
 ## Part I Data Cleaning
