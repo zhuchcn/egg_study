@@ -38,6 +38,7 @@ fdata = data[c('Protein IDs',
                'Protein names', 
                'Gene names', 
                'Fasta headers', 
+               'Unique sequence coverage [%]',
                'Mol. weight [kDa]', 
                'Sequence length', 
                'Sequence lengths', 
@@ -102,7 +103,7 @@ In the dropdown manue, select 1000 to see all the proteins in one page.
 
 ```{r}
 intensity$feature_data %>%
-    select(c(protein, `Sequence length`, `Mol. weight [kDa]`, `Q-value`, Score)) %>%
+    select(c(protein, `Sequence length`, `Unique sequence coverage [%]`, `Mol. weight [kDa]`, `Q-value`, Score)) %>%
     datatable(rownames = FALSE, options = list(lengthMenu = c(10, 50, 100, 10000)))
 ```
 
