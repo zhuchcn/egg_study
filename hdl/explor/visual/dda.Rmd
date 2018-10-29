@@ -32,9 +32,7 @@ rownames(data) = paste0(
 ## -------- split data ---------------------------------------------------------
 fdata = data[c('Protein IDs', 
                'Majority protein IDs', 
-               'Peptide counts (all)', 
-               'Peptide counts (razor+unique)', 
-               'Peptide counts (unique)', 
+               'Peptides',
                'Protein names', 
                'Gene names', 
                'Fasta headers', 
@@ -176,9 +174,27 @@ iBAQ = subset_features(iBAQ, iBAQ$feature_data$`Q-value` <= 0.001)
 
 So here I removed all the proteins with Q-values larger than 0.001. And after that, the number of proteins become `r nfeatures(intensity)`
 
-# 3. Zeros
+# 3. Score
 
-The graph below shows the number of zeros in each sample. Each sample has quit a few proteins not detected.
+Below is the histogram of the `Score` variable. It's clear that the 74 proteins on the very right are very different from others. So here I removed all proteins with a `Score` smaller than 322.
+
+```{r}
+(intensity$feature_data %>%
+    ggplot() +
+    geom_histogram(aes(Score), bins = 40, color = "white")+
+    theme_bw()) %>%
+    ggplotly
+```
+
+```{r}
+intensity = subset_features(intensity, intensity$feature_data$Score >= 322)
+LFQ = subset_features(LFQ, featureNames(intensity))
+iBAQ = subset_features(iBAQ, featureNames(intensity))
+```
+
+# 4. Zeros
+
+After the proteins with lower `Score` were removed, the there is only one subject that has only one protein that is not detected (which is SAA1).
 
 ```{r}
 (data.frame(nzero = apply(intensity$conc_table, 2, function(x) sum(x == 0)),
@@ -201,9 +217,10 @@ The graph below shows the count of proteins with different zeros observed. So he
     ggplotly
 ```
 
+
 ```{r}
 intensity = subset_features(
-    intensity, apply(intensity$conc_table, 1, function(x) sum(x == 0) < 5))
+    intensity, apply(intensity$conc_table, 1, function(x) sum(x == 0) ==0 ))
 iBAQ = subset_features(iBAQ, featureNames(intensity))
 LFQ = subset_features(LFQ, featureNames(intensity))
 ```
@@ -220,7 +237,10 @@ The coefficient of the Responding and Timepoint interaction was tested for signi
 prt = list(
     intensity = intensity,
     LFQ = LFQ,
-    iBAQ = iBAQ
+    iBAQ = iBAQ,
+    'int_%' = transform_by_sample(intensity, function(x) x/sum(x, na.rm=TRUE)),
+    'LFQ_%' = transform_by_sample(LFQ, function(x) x/sum(x, na.rm=TRUE)),
+    'iBAQ_%' = transform_by_sample(iBAQ, function(x) x/sum(x, na.rm=TRUE))
 )
 design = model.matrix(data = as(prt$intensity$sample_table, "data.frame"), 
                       ~Responding * Timepoint + Subject + 1)
