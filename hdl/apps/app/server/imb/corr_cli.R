@@ -1,5 +1,5 @@
 output$imb_cli_Selector = renderUI({
-    selectInput("imb_cli", "Select HDL Function Variable",
+    selectInput("imb_cli", "Select Clinical Variable",
                 choices = featureNames(data$data$cli),
                 selected = featureNames(data$data$cli)[1])
 })

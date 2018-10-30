@@ -22,6 +22,11 @@ pdata = diet_data[,1:5] %>%
     mutate(Timepoint = ifelse(grepl("^pre-", Treatment), "Pre", "Post")) %>%
     mutate(Treatment = gsub("white", "sub", TX)) %>%
     mutate(sample_id = paste0("Egg", Subject, Visit)) %>%
+    mutate(
+        Timepoint = factor(Timepoint, levels = c("Pre", "Post")),
+        Treatment = factor(Treatment, levels = c("sub", "egg")),
+        Subject = factor(Subject)
+    ) %>%
     as.data.frame %>%
     column_to_rownames("sample_id")
 colnames(edata) = rownames(pdata)

@@ -6,9 +6,7 @@ for(pkg in pkgs){
 }
 
 ## --------------------- load data -------------------------
-rm(list=ls())
-setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/data")
-load("hdl.Rdata"); load("diet.Rdata")
+load("../../data/hdl.Rdata"); load("../../data/diet.Rdata")
 
 ## --------------------- limma ----------------------------
 design = model.matrix(
@@ -26,9 +24,11 @@ corr_fct = MatCorPack(X=conc_table(hdl_function), Y=conc_table(ion_morbility),
                       methods = methods, design = design2)
 corr_clinical = MatCorPack(X=conc_table(clinical), Y=conc_table(ion_morbility),
                            methods = methods, design = design2)
+corr_diet = MatCorPack(X=conc_table(diet), Y=conc_table(ion_morbility),
+                           methods = methods, design = design2)
 
 ## -------------------- save ----------------------------
 setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/hdl/Rdata")
-save(ion_morbility,limma_result, corr_fct, corr_clinical, 
-     hdl_function, clinical,
+save(ion_morbility,limma_result, corr_fct, corr_clinical, corr_diet,
+     hdl_function, clinical, diet,
      file="imb_precalc.Rdata")

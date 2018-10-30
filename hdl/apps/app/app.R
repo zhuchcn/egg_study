@@ -29,12 +29,15 @@ server <- function(input, output) {
     source("server/imb/boxplot.R",  local = TRUE)
     source("server/imb/corr_fct.R", local = TRUE)
     source("server/imb/corr_cli.R", local = TRUE)
+    source("server/imb/corr_diet.R", local = TRUE)
 
     source("server/fct/boxplot.R",  local = TRUE)
     source("server/fct/corr_fct.R", local = TRUE)
     source("server/fct/corr_cli.R", local = TRUE)
     
     source("server/cli/boxplot.R",  local = TRUE)
+    
+    source("server/diet/boxplot.R",  local = TRUE)
 }
 
 # Run the application 
