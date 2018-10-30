@@ -27,14 +27,14 @@ imb_diet_selector = reactive({
 
 output$imb_diet_scatter = renderPlotly({
     df = data.frame(
-        x = data$data$imb$conc_table[imb_diet_selector(),],
-        y = data$data$diet$conc_table[input$imb_diet,],
+        x = data$data$diet$conc_table[input$imb_diet,],
+        y = data$data$imb$conc_table[imb_diet_selector(),],
         Treatment = data$data$imb$sample_table$Treatment,
         Timepoint = data$data$imb$sample_table$Timepoint,
         Subject = data$data$imb$sample_table$Subject
     )
-    p = ggscatterplot(df, "x", "y", color = "Subject", color.pal = pal_jama()(7)) +
-        labs(x = paste0(imb_diet_selector()), 
-             y = input$imb_diet)
+    p = ggscatterplot(df, x = "x", y = "y", color = "Subject", color.pal = pal_jama()(7)) +
+        labs(x = input$imb_diet, 
+             y = paste0(imb_diet_selector()))
     ggplotly(p)
 })
