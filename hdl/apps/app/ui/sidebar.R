@@ -1,7 +1,7 @@
 sidebar = dashboardSidebar(
     sidebarMenu(
         menuItem("Home", icon = icon("home"), newtab = FALSE,
-                 href = "http://www.chenghaozhu.net/studies/egg/docs/hdl.html")
+                 href = "http://www.chenghaozhu.net/studies/egg/hdl.html")
     ),
     uiOutput("VarsInput"),
     sidebarMenu(
