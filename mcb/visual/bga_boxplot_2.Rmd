@@ -1,0 +1,50 @@
+---
+title: "Biogenic amines box plot"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pkgs = c('dplyr','stringr','reshape2','tibble',
+         'Metabase', 'ggplot2', 'knitr', 'kableExtra')
+for(pkg in pkgs){
+    library(pkg, verbose = FALSE, warn.conflicts = FALSE,
+            character.only = TRUE, quietly = TRUE)
+}
+```
+
+```{r}
+load("../Rdata/bga_precalc.Rdata")
+```
+
+## Statistic Analysis
+
+```{r}
+limma$Annotation <- bga$feature_data$Annotation
+limma[order(limma$pvalue),] %>%
+    head(n=10) %>% 
+    kable() %>%
+    kable_styling()
+```
+
+## Visualization
+
+```{r}
+df = data.frame(some_amine = bga$conc_table[which(bga$feature_data$Annotation == "Choline"),],
+           timepoint = bga$sample_table$Timepoint,
+           treatment = bga$sample_table$Treatment,
+           subject = bga$sample_table$Subject)
+p = ggplot(df, aes(x=timepoint, y=some_amine)) +
+    geom_boxplot() +
+    facet_grid(~treatment) + 
+    geom_line(aes(group = subject, colour = subject)) + 
+    geom_point(aes(color = subject)) +
+    theme_bw()
+p
+```
+
+
+
