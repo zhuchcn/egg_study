@@ -1,7 +1,7 @@
 sidebar = dashboardSidebar(
     sidebarMenu(
         menuItem("Home", icon = icon("home"), newtab = FALSE,
-                 href = "http://www.chenghaozhu.net/studies/egg/docs/hdl.html")
+                 href = "http://www.chenghaozhu.net/studies/egg/hdl.html")
     ),
     uiOutput("VarsInput"),
     sidebarMenu(
@@ -19,7 +19,8 @@ sidebar = dashboardSidebar(
             icon = icon("caret-right"), "Ion Morbility",
             menuSubItem("Boxplot", tabName = "imb_boxplot"),
             menuSubItem("vs HDL Function", tabName = "imb_fct"),
-            menuSubItem("vs Clinical Values", tabName = "imb_cli")
+            menuSubItem("vs Clinical Values", tabName = "imb_cli"),
+            menuSubItem("vs Diet Data", tabName = "imb_diet")
         ),
         menuItem(
             icon = icon("caret-right"), "HDL Functions",
@@ -30,6 +31,10 @@ sidebar = dashboardSidebar(
         menuItem(
             icon = icon("caret-right"), "Clinical Values",
             menuSubItem("Boxplot", tabName = "cli_boxplot")
+        ),
+        menuItem(
+            icon = icon("caret-right"), "Diet",
+            menuSubItem("Boxplot", tabName = "diet_boxplot")
         )
     )
 )

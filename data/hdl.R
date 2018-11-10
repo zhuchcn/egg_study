@@ -1,5 +1,5 @@
 ## ---------------------- load packages -------------------------
-library(dplyr);library(reshape2);library(stringr)
+library(dplyr);library(reshape2);library(stringr);library(readr)
 library(tibble);library(data.table);library(readxl); 
 library(Metabase)
 
@@ -107,8 +107,6 @@ ion_morbility = MultxSet(
 ################################################################################
 ##########                  H D L   F U N C T I O N                   ##########
 ################################################################################
-
-
 # Cholesterol Efflux
 file = "raw_data/function_data/20180213 Egg Study Cholesterol Efflux Assay (ApoB Depleted Serum 1%).xlsx"
 fct_data = read_excel(
@@ -173,9 +171,101 @@ hdl_function = MultxSet(
 )
 
 ################################################################################
+##########                      P R O T E O M E                       ##########
+################################################################################
+## -------- read data ----------------------------------------------------------
+file = "raw_data/proteome/proteinGroups.txt"
+data = read_tsv(file)
+data = data[!is.na(data$`Protein names`),] %>%
+    filter(!grepl("Keratin", `Fasta headers`)) %>%
+    filter(`Q-value` < 0.001)
+data = as.data.frame(data)
+rownames(data) = paste0(
+    "Feat",
+    str_pad(1:nrow(data), pad = "0", width = 4)
+)
+## -------- split data ---------------------------------------------------------
+fdata = data[c('Protein IDs', 
+               'Majority protein IDs', 
+               'Peptide counts (all)', 
+               'Peptide counts (razor+unique)', 
+               'Peptide counts (unique)', 
+               'Protein names', 
+               'Gene names', 
+               'Fasta headers', 
+               'Unique sequence coverage [%]',
+               'Mol. weight [kDa]', 
+               'Sequence length', 
+               'Sequence lengths', 
+               'Q-value', 
+               'Score')]
+#peptides = data[grepl("^Peptides [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+#razor = data[grepl("^Razor \\+ unique peptides [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+#ident_type = data[grepl("^Identification type [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+#seq_coverage = data[grepl("^Sequence coverage [03]_Lisa_\\d{3}[ABCDc] \\[\\%\\]$", colnames(data))]
+iBAQ = data[grepl("^iBAQ [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+intensity = data[grepl("^Intensity [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+LFQ = data[grepl("^LFQ intensity [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
+## -------- clean feature data -------------------------------------------------
+fdata$accession = str_split_fixed(fdata$`Fasta headers`, " ", n=2)[,1]
+fdata$protein = str_split_fixed(
+    str_split_fixed(fdata$`Fasta headers`, "OS=", n=2)[,1],
+    " ", n=2)[,2]
+fdata$species = gsub("^.+OS=(.+?) [A-Z]{2}=.+$", "\\1", fdata$`Fasta headers`)
+## -------- make sample data ---------------------------------------------------
+sample_id = toupper(gsub(".+Lisa_(\\d{3}[ABCDc])","\\1", colnames(intensity)))
+pdata = data.frame(
+    row.names = paste0("Egg", sample_id),
+    Subject = str_sub(sample_id, 1,3),
+    Timepoint = ifelse(grepl("\\d{3}[AC]", sample_id), "Pre", "Post") %>%
+        factor(levels = c("Pre", "Post")),
+    Responding = c("Non-responder", "Responder")[c(1,1,2,2,2,2,1,1,1,1,2,2,1,1,1,1,2,2,2,2)]
+)
+
+## -------- mSet ---------------------------------------------------------------
+colnames(iBAQ) = rownames(pdata)
+iBAQ = ProteomicsSet(
+    conc_table = conc_table(as.matrix(iBAQ)),
+    sample_table = sample_table(pdata),
+    feature_data = feature_data(fdata)
+)
+
+colnames(LFQ) = rownames(pdata)
+LFQ = ProteomicsSet(
+    conc_table = conc_table(as.matrix(LFQ)),
+    sample_table = sample_table(pdata),
+    feature_data = feature_data(fdata)
+)
+
+colnames(intensity) = rownames(pdata)
+intensity = ProteomicsSet(
+    conc_table = conc_table(as.matrix(intensity)),
+    sample_table = sample_table(pdata),
+    feature_data = feature_data(fdata)
+)
+
+iBAQ = subset_samples(iBAQ, !iBAQ$sample_table$Subject %in% c(115, 119))
+LFQ = subset_samples(LFQ, !LFQ$sample_table$Subject %in% c(115, 119))
+intensity = subset_samples(intensity, !intensity$sample_table$Subject %in% c(115, 119))
+
+intensity = subset_features(
+    intensity, apply(intensity$conc_table, 1, function(x) sum(x == 0) < 5))
+iBAQ = subset_features(iBAQ, featureNames(intensity))
+LFQ = subset_features(LFQ, featureNames(intensity))
+
+intensity$sample_table$Subject = factor(intensity$sample_table$Subject)
+iBAQ$sample_table$Subject = factor(iBAQ$sample_table$Subject)
+LFQ$sample_table$Subject = factor(LFQ$sample_table$Subject)
+
+proteome = list(
+    iBAQ = iBAQ, 
+    LFQ = LFQ, 
+    intensity = intensity)
+
+################################################################################
 ##########                          S A V E                           ##########
 ################################################################################
 
 path = "data/hdl.Rdata"
-save(lipidome, ion_morbility, hdl_function,
+save(lipidome, ion_morbility, hdl_function, proteome,
      file = path)

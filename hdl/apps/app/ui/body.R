@@ -1,5 +1,5 @@
 boxplotTabGen = function(tabName) {
-    type = substr(tabName,0,3)
+    type = strsplit(tabName, "_")[[1]][1]
     tabItem(
         tabName = tabName,
         fluidRow(
@@ -92,9 +92,11 @@ body = dashboardBody(
         histTabGen("imb_hist"),
         corrTabGen("imb_fct"),
         corrTabGen("imb_cli"),
+        corrTabGen("imb_diet"),
         boxplotTabGen("fct_boxplot"),
         corrTabGen("fct_fct"),
         corrTabGen("fct_cli"),
-        boxplotTabGen("cli_boxplot")
+        boxplotTabGen("cli_boxplot"),
+        boxplotTabGen("diet_boxplot")
     )
 )
