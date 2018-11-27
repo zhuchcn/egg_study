@@ -1,6 +1,4 @@
-
-## Microbiome Data
-
+## -------- load packages ------------------------------------------------------
 pkgs = c("dplyr", "stringr", "reshape2", "tibble", "data.table", "readxl", 
          "tidyr", "Metabase")
 for(pkg in pkgs){
@@ -9,6 +7,10 @@ for(pkg in pkgs){
 }
 
 setwd(dirname(parent.frame(2)$ofile))
+
+################################################################################
+##########                    M I C R O B I O M E                     ##########
+################################################################################
 
 otu_table = read.table('../16s_processing/dada2/feature_table.tsv', 
                        sep = '\t', header=T, stringsAsFactor=F, row.names = 1)
@@ -51,12 +53,12 @@ bga = import_wcmc_excel(
     feature_range = "A7:H1296",
     InChIKey = "InChI Key"
 )
-## -------- quality control samples summarized into mean, sd, and cv ----------------------------------------------------------
+## -------- quality control samples summarized into mean, sd, and cv -----------
 bga = collapse_QC(bga, qc_names = paste0("Biorec00", 1:9))
-## -------- remove features----------------------------------------------------------
+## -------- remove features-----------------------------------------------------
 bga = subset_features(bga, !is.na(feature_data(bga)$InChIKey))
 bga = subset_features(bga, !grepl("iSTD$", feature_data(bga)$Annotation))
-## -------- remove NAs as required and fill in new values ------------------------------------------------------
+## -------- remove NAs as required and fill in new values ----------------------
 bga = subset_features(
     bga, apply(conc_table(bga), 1, function(x) sum(is.na(x)) < 21) )
 bga = transform_by_feature(
@@ -82,14 +84,52 @@ metadata = read_excel(
 
 metadata = metadata[sampleNames(bga),]
 
-bga$sample_table = sample_table(cbind(bga$sample_table[,colnames(bga$sample_table) != "Treatment"], 
-                                      metadata))
+bga$sample_table = sample_table(
+    cbind(bga$sample_table[,colnames(bga$sample_table) != "Treatment"], 
+          metadata)
+)
 bga$feature_data$Annotation <- as.character(bga$feature_data$Annotation)
 bga$feature_data$Annotation[bga$feature_data$InChIKey == "DKZBBWMURDFHNE-NSCUHMNNSA-N"] = "4-Hydroxy-3-methoxycinnamaldehyde"
 bga$feature_data$Annotation[bga$feature_data$InChIKey == "IYRMWMYZSQPJKC-UHFFFAOYSA-N"] = "Kaempferol"
 bga$feature_data$Annotation[bga$feature_data$InChIKey == "ZFXYFBGIUFBOJW-UHFFFAOYSA-N"] = "Theophylline"
 
+featureNames(bga) = bga$feature_data$Annotation
+
+################################################################################
+##########                     B I L E   A C I D                      ##########
+################################################################################
+
+path = "../raw_data/bile_acids/mx 349941 Zhu_bile acids_human plasma_09-2018 submit.xlsx"
+conc_range = "T9:CU31"
+sample_range = "S2:CU6"
+feature_range = "A8:S31"
+bac = import_wcmc_excel(
+    file = path, 
+    sheet = "Final Submit", 
+    conc_range = conc_range, 
+    sample_range = sample_range, 
+    feature_range = feature_range, 
+    InChIKey = "InChIKey"
+)
+sampleNames(bac) = gsub("\\d{2,3}-\\d{1,2}-Egg-(\\d{3})-([A-D]{1})", "EGG\\1\\2", sampleNames(bac))
+featureNames(bac) = bac$feature_data$`short key`
+bac$sample_table$Subject = bga$sample_table$Subject
+bac$sample_table$Timepoint = bga$sample_table$Timepoint
+bac$sample_table$Treatment = bga$sample_table$Treatment
+
+## remove features with more than 10 observations smaller than the LOQ
+# bac = subset_features(
+#     bac, 
+#     sapply(1:nfeatures(bac), function(i)
+#         sum(bac$conc_table[i,] <= bac$feature_data$`LOQ (nM)`[i]) <= 10)
+# )
+bac = subset_features(bac, !grepl('MCA$', featureNames(bac)))
+bac = subset_features(
+    bac, sapply(1:nfeatures(bac), function(i)
+        sum(bac$conc_table[i,] <= bac$feature_data$`LOQ (nM)`[i]) < 80)
+)
+
 ################################################################################
 ##########                          S A V E                           ##########
 ################################################################################
-save(mcb, bga, file = "mcb.rda")
+save(mcb, bga, bac, file = "mcb.rda")
