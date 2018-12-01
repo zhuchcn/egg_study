@@ -6,9 +6,8 @@ library(Metabase)
 ################################################################################
 ##########                      L I P I D O M E                       ##########
 ################################################################################
-rm(list = ls())
-setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis")
-file = "raw_data/lipidome/mx 348391_Zhu_CSH-QTOF MSMS_lipidomics_isolated HDL particles_11-2017_submit.xlsx"
+setwd(dirname(parent.frame(2)$ofile))
+file = "../raw_data/lipidome/mx 348391_Zhu_CSH-QTOF MSMS_lipidomics_isolated HDL particles_11-2017_submit.xlsx"
 lipidome = import_wcmc_excel(
     file            = file,
     sheet           = "submit",
@@ -23,7 +22,7 @@ lipidome = collapse_QC(lipidome, qc_names = paste0("Biorec00",1:9))
 lipidome = transform_by_feature(lipidome, function(x){
     ifelse(is.na(x), min(x,na.rm = TRUE)/2, x)
 })
-standards = read.csv("raw_data/lipidome/wcmc_lipidomics_standards.csv")
+standards = read.csv("../raw_data/lipidome/wcmc_lipidomics_standards.csv")
 feature_data(lipidome)$ESI = ifelse(
     grepl("\\+$", feature_data(lipidome)$Species), "pos", "neg"
 )
@@ -41,7 +40,7 @@ feature_data(lipidome)$Annotation = make.unique(feature_data(lipidome)$Annotatio
 featureNames(lipidome) = feature_data(lipidome)$Annotation
 
 design = read_excel(
-    path = "raw_data/clinical_data/1-LSK Master Egg Data FR merged w Clinical & IM-122917.xlsx",
+    path = "../raw_data/clinical_data/1-LSK Master Egg Data FR merged w Clinical & IM-122917.xlsx",
     sheet = "Master",
     range = "A1:C81"
 ) %>% as.data.frame %>%
@@ -61,7 +60,7 @@ sampleNames(lipidome) = gsub("-","",sampleNames(lipidome))
 ################################################################################
 ##########                 I O N   M O R B I L I T Y                  ##########
 ################################################################################
-file = "raw_data/ion_morbility/1-Corrected IM categories.9.5.18.xlsx"
+file = "../raw_data/ion_morbility/1-Corrected IM categories.9.5.18.xlsx"
 ep_data = read_excel(
     path = file,
     sheet = 1, range = "A1:U81", col_names = T
@@ -108,7 +107,7 @@ ion_morbility = MultxSet(
 ##########                  H D L   F U N C T I O N                   ##########
 ################################################################################
 # Cholesterol Efflux
-file = "raw_data/function_data/20180213 Egg Study Cholesterol Efflux Assay (ApoB Depleted Serum 1%).xlsx"
+file = "../raw_data/function_data/20180213 Egg Study Cholesterol Efflux Assay (ApoB Depleted Serum 1%).xlsx"
 fct_data = read_excel(
     path = file,
     sheet = "Results", range = "A1:B80", col_names = F
@@ -121,7 +120,7 @@ fct_data = read_excel(
     column_to_rownames("SampleID")
 
 # CETP, LCAT, PON1, SAA, oxLDL, and CRP
-file = "raw_data/function_data/Egg_data_STA260_051418.csv"
+file = "../raw_data/function_data/Egg_data_STA260_051418.csv"
 fct_data_2 = read.csv(
     file=file,
     stringsAsFactors = F
@@ -133,13 +132,13 @@ fct_data_2 = read.csv(
     column_to_rownames("samplename")
 
 # conjugated diene
-file = "raw_data/function_data/Egg_data_CDassay_070918.csv"
+file = "../raw_data/function_data/Egg_data_CDassay_070918.csv"
 fct_data_3 = read.csv(file = file, stringsAsFactors = FALSE) %>%
     mutate(sample_id = paste0("Egg", samplename)) %>%
     column_to_rownames("sample_id")
 
 # hdl proteins lowry method, by Jody
-file = "raw_data/function_data/Egg HDL protein concentration- Lowry method 06292017.xlsx"
+file = "../raw_data/function_data/Egg HDL protein concentration- Lowry method 06292017.xlsx"
 protein = read_excel(
     path = file, sheet = "Study samples", range = "A1:C81"
 ) %>%
@@ -149,7 +148,7 @@ protein = read_excel(
     column_to_rownames("sample_id")
 
 # HDL apo A1 
-file = "raw_data/clinical_data/1-LSK Egg Study Clincal & Diet Data w_ApoA1-HDL.6.27.2018.xlsx"
+file = "../raw_data/clinical_data/1-LSK Egg Study Clincal & Diet Data w_ApoA1-HDL.6.27.2018.xlsx"
 apoa1 = read_excel(path = file, sheet = "Sheet1", range = "A1:R81") %>%
     select(c("Study ID", "Visit", "ApoA1-HDL")) %>%
     mutate(sample_id = paste0("Egg", `Study ID`, `Visit`)) %>%
@@ -174,11 +173,10 @@ hdl_function = MultxSet(
 ##########                      P R O T E O M E                       ##########
 ################################################################################
 ## -------- read data ----------------------------------------------------------
-file = "raw_data/proteome/proteinGroups.txt"
+file = "../raw_data/proteome/proteinGroups.txt"
 data = read_tsv(file)
 data = data[!is.na(data$`Protein names`),] %>%
-    filter(!grepl("Keratin", `Fasta headers`)) %>%
-    filter(`Q-value` < 0.001)
+    filter(!grepl("Keratin", `Fasta headers`))
 data = as.data.frame(data)
 rownames(data) = paste0(
     "Feat",
@@ -199,10 +197,6 @@ fdata = data[c('Protein IDs',
                'Sequence lengths', 
                'Q-value', 
                'Score')]
-#peptides = data[grepl("^Peptides [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
-#razor = data[grepl("^Razor \\+ unique peptides [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
-#ident_type = data[grepl("^Identification type [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
-#seq_coverage = data[grepl("^Sequence coverage [03]_Lisa_\\d{3}[ABCDc] \\[\\%\\]$", colnames(data))]
 iBAQ = data[grepl("^iBAQ [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
 intensity = data[grepl("^Intensity [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
 LFQ = data[grepl("^LFQ intensity [03]_Lisa_\\d{3}[ABCDc]$", colnames(data))]
@@ -248,14 +242,28 @@ iBAQ = subset_samples(iBAQ, !iBAQ$sample_table$Subject %in% c(115, 119))
 LFQ = subset_samples(LFQ, !LFQ$sample_table$Subject %in% c(115, 119))
 intensity = subset_samples(intensity, !intensity$sample_table$Subject %in% c(115, 119))
 
+## -------- Filter by Q value --------------------------------------------------
+intensity = subset_features(intensity, intensity$feature_data$`Q-value` <= 0.001)
+LFQ = subset_features(LFQ, LFQ$feature_data$`Q-value` <= 0.001)
+iBAQ = subset_features(iBAQ, iBAQ$feature_data$`Q-value` <= 0.001)
+
+## -------- Filter by Score ----------------------------------------------------
+intensity = subset_features(intensity, intensity$feature_data$Score >= 322)
+LFQ = subset_features(LFQ, featureNames(intensity))
+iBAQ = subset_features(iBAQ, featureNames(intensity))
+
 intensity = subset_features(
-    intensity, apply(intensity$conc_table, 1, function(x) sum(x == 0) < 5))
+    intensity, apply(intensity$conc_table, 1, function(x) sum(x == 0) == 0))
 iBAQ = subset_features(iBAQ, featureNames(intensity))
 LFQ = subset_features(LFQ, featureNames(intensity))
 
 intensity$sample_table$Subject = factor(intensity$sample_table$Subject)
 iBAQ$sample_table$Subject = factor(iBAQ$sample_table$Subject)
 LFQ$sample_table$Subject = factor(LFQ$sample_table$Subject)
+
+featureNames(intensity) = intensity$feature_data$protein
+featureNames(iBAQ) = iBAQ$feature_data$protein
+featureNames(LFQ) = LFQ$feature_data$protein
 
 proteome = list(
     iBAQ = iBAQ, 
@@ -266,6 +274,6 @@ proteome = list(
 ##########                          S A V E                           ##########
 ################################################################################
 
-path = "data/hdl.Rdata"
+path = "hdl.Rdata"
 save(lipidome, ion_morbility, hdl_function, proteome,
      file = path)

@@ -9,7 +9,7 @@ setwd("~/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/An
 file = "raw_data/diet_data/Diet Data.7.3.18xlsx.xlsx"
 diet_data = read_excel(
     path = file,
-    sheet="Sheet1", range="A1:Q81"
+    sheet="Sheet1", range="A1:R81"
 ) 
 edata = diet_data[,6:ncol(diet_data)] %>% t
 fdata = tibble(feature_id = rownames(edata)) %>%
