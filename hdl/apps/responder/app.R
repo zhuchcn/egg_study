@@ -1,4 +1,4 @@
-pkgs = c("shiny", "shinydashboard", "dplyr", "reshape2", "glue", "Metabase",
+pkgs = c("shiny", "shinydashboard", "dplyr", "reshape2", "Metabase",
          "ggplot2", "plotly", "DT", "ggsci")
 for(pkg in pkgs){
     library(pkg, character.only = TRUE, quietly = TRUE, verbose = FALSE, warn.conflicts = FALSE)
