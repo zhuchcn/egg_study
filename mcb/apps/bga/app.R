@@ -12,7 +12,7 @@ for(pkg in pkgs){
     library(pkg, verbose = FALSE, warn.conflicts = FALSE,
             character.only = TRUE, quietly = TRUE)
 }
-load("../mcb/Rdata/bga_precalc.Rdata")
+load("../../Rdata/bga_precalc.rda")
 
 ui <- fluidPage(
     
