@@ -25,16 +25,13 @@ for(pkg in pkgs){
 ```
 
 ```{r}
-load("../../data/mcb.Rdata")
+load("../../data/mcb.rda")
 ```
-
-Calibrated (umol/mL)
-====================
 
 ###
 
 ```{r}
-Biogenic_Amines$edata_list$`umol/mL` %>%
+bga$conc_table %>%
     t %>% as.data.frame %>%
     datatable(
         extensions = 'Buttons',
@@ -44,26 +41,7 @@ Biogenic_Amines$edata_list$`umol/mL` %>%
             bottons = c("copy","csv","excel")
         )
     ) %>%
-    formatRound(columns = rownames(Biogenic_Amines$edata_list$`umol/mL`),
+    formatRound(columns = featureNames(bga),
                 digits = 3)
 ```
 
-Uncalibrated (raw MS intensity)
-====================
-
-###
-
-```{r}
-Biogenic_Amines$edata_list$raw %>%
-    mutate(feature = Biogenic_Amines$fdata$Annotation) %>%
-    column_to_rownames("feature") %>%
-    t %>% as.data.frame %>%
-    datatable(
-        extensions = 'Buttons',
-        options = list(
-            dom = "Bfrtip",
-            pageLength = 40,
-            bottons = c("copy","csv","excel")
-        )
-    )
-```
