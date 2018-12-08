@@ -5,6 +5,9 @@ for(pkg in pkgs){
             character.only=TRUE)
 }
 
+source("ui/siderbar.R")
+source("ui/body.R")
+
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
     header = dashboardHeader(title = "Egg Study"),

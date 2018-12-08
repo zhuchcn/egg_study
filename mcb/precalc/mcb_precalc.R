@@ -46,7 +46,7 @@ design = model.matrix(data = as(mcb$kingdom$sample_table, "data.frame"),
 #     #cat("test")
 # })
 lm = lapply(mcb, function(x) mSet_limma(x, design, coef = 22, p.value = 22))
-
+ 
 save(mcb, lm, file = '../Rdata/mcb_precalc.rda')
 
 # shinyApp(

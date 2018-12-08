@@ -29,7 +29,7 @@ load("../../data/hdl.Rdata")
 ###
 
 ```{r}
-fct_data %>%
+hdl_function$conc_table %>% t %>%
     datatable(
         extensions = 'Buttons',
         options = list(
@@ -38,6 +38,6 @@ fct_data %>%
             bottons = c("copy","csv","excel")
         )
     ) %>%
-    formatRound(columns = colnames(fct_data),
+    formatRound(columns = featureNames(hdl_function),
                 digits = 3)
 ```

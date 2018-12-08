@@ -32,7 +32,7 @@ Data
 ###
 
 ```{r}
-ion_morbility$edata %>%
+ion_morbility$conc_table %>%
     t %>% as.data.frame %>%
     datatable(
         extensions = 'Buttons',
@@ -42,7 +42,7 @@ ion_morbility$edata %>%
             bottons = c("copy","csv","excel")
         )
     ) %>%
-    formatRound(columns = rownames(ion_morbility$edata), digits = 3)
+    formatRound(columns = featureNames(ion_morbility), digits = 3)
 ```
 
 Variables
@@ -51,7 +51,7 @@ Variables
 ###
 
 ```{r}
-ion_morbility$fdata %>% 
+ion_morbility$feature_data %>% 
     datatable(
         extensions = 'Buttons',
         options = list(

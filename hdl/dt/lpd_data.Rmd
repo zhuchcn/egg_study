@@ -30,7 +30,7 @@ Concentration {data-navmenu="Class"}
 ============================
 
 ```{r}
-edata_list$class$Concentration %>%
+lipidome_set$class$Concentration$conc_table %>%
     t %>% as.data.frame %>%
     datatable(
         extensions = 'Buttons',
@@ -40,7 +40,7 @@ edata_list$class$Concentration %>%
             bottons = c("copy","csv","excel")
         )
     ) %>%
-    formatRound(columns = rownames(edata_list$class$Concentration),
+    formatRound(columns = featureNames(lipidome_set$class$Concentration),
                 digits = 3)
 ```
 
@@ -48,7 +48,7 @@ Proportion {data-navmenu="Class"}
 =====================================
 
 ```{r}
-edata_list$class$Proportion %>%
+lipidome_set$class$Proportion$conc_table %>%
     t %>% as.data.frame %>%
     datatable(
         extensions = 'Buttons',
@@ -58,7 +58,7 @@ edata_list$class$Proportion %>%
             bottons = c("copy","csv","excel")
         )
     )%>%
-    formatRound(columns = rownames(edata_list$class$Proportion),
+    formatRound(columns = rownames(lipidome_set$class$Proportion),
                 digits = 3)
 ```
 
@@ -66,7 +66,7 @@ Concentration {data-navmenu="Species"}
 =====================================
 
 ```{r}
-edata_list$species$Concentration %>%
+lipidome_set$feature$Concentration$conc_table %>%
     t %>% as.data.frame %>%
     datatable(
         extensions = 'Buttons',
@@ -76,7 +76,7 @@ edata_list$species$Concentration %>%
             bottons = c("copy","csv","excel")
         )
     )%>%
-    formatRound(columns = rownames(edata_list$species$Concentration),
+    formatRound(columns = featureNames(lipidome_set$feature$Concentration),
                 digits = 3)
 ```
 
@@ -84,7 +84,7 @@ Proportion {data-navmenu="Species"}
 =====================================
 
 ```{r}
-edata_list$species$Proportion %>%
+lipidome_set$feature$Proportion$conc_table %>%
     t %>% as.data.frame %>%
     datatable(
         extensions = 'Buttons',
@@ -94,6 +94,6 @@ edata_list$species$Proportion %>%
             bottons = c("copy","csv","excel")
         )
     )%>%
-    formatRound(columns = rownames(edata_list$species$Proportion),
+    formatRound(columns = featureNames(lipidome_set$feature$Proportion),
                 digits = 3)
 ```

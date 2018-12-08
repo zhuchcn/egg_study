@@ -29,7 +29,7 @@ load("../../data/diet.Rdata")
 ###
 
 ```{r}
-clinical_data %>%
+clinical$conc_table %>% t %>%
     datatable(
         extensions = 'Buttons',
         options = list(
@@ -38,5 +38,5 @@ clinical_data %>%
             bottons = c("copy","csv","excel")
         )
     ) %>%
-    formatRound(columns = colnames(clinical_data), digits = 3)
+    formatRound(columns = featureNames(clinical), digits = 3)
 ```
