@@ -1,36 +1,140 @@
-pkgs = c("shiny", "shinydashboard", "dplyr", "reshape2", "Metabase",
-         "ggplot2", "plotly", "DT", "ggsci", "tibble", "ggmetaplots")
-for(pkg in pkgs){
-    library(pkg, character.only = TRUE, quietly = TRUE, verbose = FALSE, warn.conflicts = FALSE)
+pkgs = c("shiny", "dplyr", "reshape2", "stringr", "tibble", 
+         "DT", "plotly", "Metabase", "shinydashboard")
+for(pkg in pkgs) {
+    library(pkg, character.only = T, quietly = T, verbose = F, warn.conflicts = F)
 }
 
 load("data/data.rda")
-
-import::here(sidebar, .from = "ui/sidebar.R")
-import::here(body, .from = "ui/body.R")
+# source()
 
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
-   header = dashboardHeader(title="Egg Study Proteome"),
-   sidebar = sidebar,
-   body = body
+    header = dashboardHeader(
+        title = "Responder vs Non-responder",
+        titleWidth = "30%"
+    ),
+    sidebar = dashboardSidebar(disable = TRUE),
+    body = dashboardBody(
+        tags$head(
+            tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+        ),
+        fluidRow(
+            column(
+                width = 3,
+                box(width = NULL,
+                    sliderInput(
+                        "cutoff", "The cutoff to be set to define responder and non-responder",
+                        min = floor(min(data$fct$chol_efflux_change)),
+                        max = ceiling(max(data$fct$chol_efflux_change)),
+                        value = round(mean(data$fct$chol_efflux_change)),
+                        step = 1
+                    ),
+                    selectInput(
+                        'lpd_level', "Lipid class, species, or summarized values",
+                        choices = names(data$lpd), selected = names(data$lpd)[1]
+                    ),
+                    uiOutput('lpdNormSelect')
+                ),
+                box(width = NULL,
+                    title = "Chol Efflux\n(post.egg - pre.egg) - (post.white - pre.white)",
+                    status = "warning",
+                    plotlyOutput('fct_boxplot')
+                )
+            ),
+            column(
+                width = 4,
+                box(width = NULL,
+                    DT::DTOutput('lpd_stat')
+                )
+            ),
+            column(
+                width = 5,
+                box(width = NULL,
+                    plotlyOutput('lpd_boxplot', height = "500px")
+                )
+            )
+        )
+    )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    # import inputs
-    source("ui/inputs.R", local = TRUE)
     
-    # Proteome
-    source("server/prt/boxplot.R", local = TRUE)
-    source("server/prt/corr_lpd.R", local = TRUE)
-    source("server/prt/corr_fct.R", local = TRUE)
+    # lpd norm method selector
+    output$lpdNormSelect = renderUI({
+        choices = names(data$lpd[[input$lpd_level]])
+        selectInput(
+            "lpd_norm", "Select a Normalization Method",
+            choices = choices, selected = choices[1]
+        )
+    })
     
-    # Lipidome
-    source("server/lpd/boxplot.R", local = TRUE)
+    # fct boxplot
+    output$fct_boxplot = renderPlotly({
+        data$fct  %>%
+            ggplot(aes(x = "change", y = chol_efflux_change)) +
+            geom_boxplot() +
+            geom_point(aes(color = Subject), size = 2, 
+                       position = position_jitter(width = 0.15)) +
+            geom_hline(yintercept = input$cutoff, color = "salmon",
+                       size = 1) +
+            labs(y = 'Chol Efflux (change of change)') +
+            theme_bw()
+    })
     
-    # Function
-    source("server/fct/boxplot.R", local = TRUE)
+    # Create a new mset object for the lpd data. Will be used for both statistic
+    # test and visualization
+    lpd_data = reactive({
+        responders = ifelse(data$fct$chol_efflux_change < input$cutoff,
+                            "Non-responder", "Responder")
+        responders = factor(responders, levels = c("Non-responder", "Responder"))
+        names(responders) = data$fct$Subject
+        mset = data$lpd[[input$lpd_level]][[input$lpd_norm]]
+        mset$sample_table$Responder = responders[mset$sample_table$Subject]
+        mset
+    })
+    
+    # stat table
+    stat_table = reactive({
+        mset =  t(lpd_data()$conc_table) %>%
+            as.data.frame() %>%
+            cbind(lpd_data()$sample_table[,c("Subject", "Timepoint", "Treatment", "Responder")]) %>%
+            melt(id.vars=c("Subject", "Treatment", "Timepoint", "Responder"),
+                 variable.name = "Lipid") %>%
+            dcast(Subject + Treatment + Responder + Lipid ~ Timepoint) %>%
+            mutate(value = post - pre) %>%
+            dcast(Subject + Responder + Lipid ~ Treatment, value.var = "value") %>%
+            mutate(value = egg - sub) %>%
+            dcast(Subject + Responder ~ Lipid, value.var = "value")
+        rownames(mset) = mset$Subject
+        mset = LipidomicsSet(
+            conc_table = conc_table(t(mset[,-(1:2)])),
+            sample_table = sample_table(mset[,1:2])
+        )
+        design = model.matrix(data = as(mset$sample_table, "data.frame"),~ Responder)
+        mSet_limma(mset, design, coef = 2, p.value = 2) %>%
+            rownames_to_column("feature") %>%
+            arrange(pvalue) %>%
+            column_to_rownames("feature")
+    })
+    
+    output$lpd_stat = DT::renderDT(
+        stat_table() %>%
+            datatable(selection = list(mode = "single", selected = 1)) %>%
+            formatRound(1:5, 2), 
+        server=T)
+    
+    lpd_stat_selector = reactive({
+        rownames(stat_table())[input$lpd_stat_rows_selected]
+    })
+    
+    output$lpd_boxplot = renderPlotly({
+        plot_boxplot(lpd_data(), feature = lpd_stat_selector(), x = "Timepoint",
+                     cols = "Treatment", rows = "Responder", line = "Subject", 
+                     color = "Subject") +
+            labs(title = lpd_stat_selector())
+    })
+    
 }
 
 # Run the application 
