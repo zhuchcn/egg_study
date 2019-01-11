@@ -20,35 +20,42 @@ ui <- dashboardPage(
         ),
         fluidRow(
             column(
-                width = 3,
-                box(width = NULL,
-                    sliderInput(
-                        "cutoff", "The cutoff to be set to define responder and non-responder",
-                        min = floor(min(data$fct$chol_efflux_change)),
-                        max = ceiling(max(data$fct$chol_efflux_change)),
-                        value = round(mean(data$fct$chol_efflux_change)),
-                        step = 1
+                width = 12,
+                box(
+                    width = NULL,
+                    column(
+                        width = 4,
+                        selectInput(
+                            "responders","Select Responders", 
+                            choices = levels(data$fct$Subject),
+                            selected = c(101, 104, 105, 107, 108, 110, 111, 113, 114, 119, 123, 124),
+                            multiple = TRUE,
+                            selectize = TRUE
+                        )
                     ),
-                    selectInput(
-                        'lpd_level', "Lipid class, species, or summarized values",
-                        choices = names(data$lpd), selected = names(data$lpd)[1]
+                    column(
+                        width = 4,
+                        selectInput(
+                            'lpd_level', "Lipid class, species, or summarized values",
+                            choices = names(data$lpd), selected = names(data$lpd)[1]
+                        )
                     ),
-                    uiOutput('lpdNormSelect')
-                ),
-                box(width = NULL,
-                    title = "Chol Efflux\n(post.egg - pre.egg) - (post.white - pre.white)",
-                    status = "warning",
-                    plotlyOutput('fct_boxplot')
+                    column(
+                        width = 4,
+                        uiOutput('lpdNormSelect')
+                    )
                 )
-            ),
+            )
+        ),
+        fluidRow(
             column(
-                width = 4,
+                width = 6,
                 box(width = NULL,
                     DT::DTOutput('lpd_stat')
                 )
             ),
             column(
-                width = 5,
+                width = 6,
                 box(width = NULL,
                     plotlyOutput('lpd_boxplot', height = "500px")
                 )
@@ -69,24 +76,11 @@ server <- function(input, output) {
         )
     })
     
-    # fct boxplot
-    output$fct_boxplot = renderPlotly({
-        data$fct  %>%
-            ggplot(aes(x = "change", y = chol_efflux_change)) +
-            geom_boxplot() +
-            geom_point(aes(color = Subject), size = 2, 
-                       position = position_jitter(width = 0.15)) +
-            geom_hline(yintercept = input$cutoff, color = "salmon",
-                       size = 1) +
-            labs(y = 'Chol Efflux (change of change)') +
-            theme_bw()
-    })
-    
     # Create a new mset object for the lpd data. Will be used for both statistic
     # test and visualization
     lpd_data = reactive({
-        responders = ifelse(data$fct$chol_efflux_change < input$cutoff,
-                            "Non-responder", "Responder")
+        responders = ifelse(data$fct$Subject %in% input$responders, 
+                            "Responder", "Non-responder")
         responders = factor(responders, levels = c("Non-responder", "Responder"))
         names(responders) = data$fct$Subject
         mset = data$lpd[[input$lpd_level]][[input$lpd_norm]]
