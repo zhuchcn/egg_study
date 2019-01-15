@@ -1,3 +1,4 @@
+setwd(dirname(parent.frame(2)$ofile))
 lpd = new.env()
 load("../../../Rdata/lpd_precalc.Rdata", envir = lpd)
 imb = new.env()
@@ -28,7 +29,8 @@ data = list(
         lpd = list(
             fct = lpd$corr_fct,
             imb = lpd$corr_imb,
-            cli = lpd$corr_clinical
+            cli = lpd$corr_clinical,
+            diet = lpd$corr_diet
         ),
         imb = list(
             fct = imb$corr_fct,
@@ -37,7 +39,8 @@ data = list(
         ),
         fct = list(
             fct = fct$corr_fct,
-            cli = fct$corr_clinical
+            cli = fct$corr_clinical,
+            diet = fct$corr_diet
         )
     )
 )

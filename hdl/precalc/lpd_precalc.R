@@ -6,8 +6,8 @@ for(pkg in pkgs){
 }
 
 ## --------------------- load data -------------------------
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/data")
-load("hdl.Rdata"); load("diet.Rdata")
+setwd(dirname(paren.frame(2)$ofile))
+load("../../data/hdl.Rdata"); load("../../data/diet.Rdata")
 ## -------- get molecular weight -----------------------------------------------
 data("wcmc_adduct")
 molwt = as.numeric(rep(NA, nfeatures(lipidome)))
@@ -91,7 +91,7 @@ corr_diet = corr_func(diet)
 corr_clinical = corr_func(clinical)
 
 ## ---------------------- save ----------------------------
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/hdl/Rdata")
+setwd("../Rdata")
 save(lipidome_set, limma_list, corr_fct, corr_imb, corr_diet, corr_clinical,
      hdl_function, ion_morbility, diet, clinical,
      file="lpd_precalc.Rdata")

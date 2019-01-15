@@ -5,12 +5,9 @@ for(pkg in pkgs){
     library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
             character.only=TRUE)
 }
-
+setwd(dirname(parent.frame(2)$oflie))
 ## --------------------- load data -------------------------
-rm(list=ls())
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/data")
-load("diet.Rdata")
-load("hdl.Rdata")
+load("../../data/diet.Rdata"); load("../../data/hdl.Rdata")
 
 ## --------------------- limma ----------------------------
 design = model.matrix(
@@ -32,6 +29,6 @@ corr_diet = MatCorPack(X=conc_table(diet), Y=conc_table(hdl_function),
                        methods = methods, design = design2)
 
 ## -------------------- save ----------------------------
-setwd("/Users/chenghaozhu/Box Sync/UC Davis/Right Now/Researches/Zivkovic Lab/Egg Study/Result/Analysis/analysis/hdl/Rdata")
+setwd("../Rdata")
 save(hdl_function,limma_result, corr_fct, clinical, corr_clinical, diet, 
      corr_diet, file="fct_precalc.Rdata")

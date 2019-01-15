@@ -1,5 +1,9 @@
 levelSelector = function(type){
-    if(type == "lpd") label = "Lipid class, feature, or summarize?"
+    if(type == "lpd"){
+        label = "Lipid class, feature, or summarize?"
+    }else if(type == "diet"){
+        label = "Use raw measures or percentage?"
+    }
     selectInput(inputId = paste0(type, ".level"), 
                 label = label,
                 choices = names(data[["data"]][[type]]),
@@ -14,7 +18,7 @@ methodSelector = function(type, choices){
 }
 
 output$VarsInput = renderUI({
-    type = substr(input$sidebar, 1, 3)
+    type = str_split_fixed(input$sidebar, "_", n = 2)[1]
     
     if(type == "lpd") {
         choices = names(data[["corr"]][[type]][["fct"]][["class"]][[1]])
@@ -32,6 +36,10 @@ output$VarsInput = renderUI({
         choices = names(data[["corr"]][["fct"]][["fct"]])
         tagList(
             methodSelector(type, choices)
+        )
+    }else if(type == "diet") {
+        tagList(
+            levelSelector(type)
         )
     }
 })
