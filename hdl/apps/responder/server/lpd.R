@@ -6,7 +6,7 @@ lpd_data1 = reactive({
     responders = factor(responders, levels = c("Non-responder", "Responder"))
     names(responders) = data$fct$sample_table$Subject
     mset = data$lpd[[input$lpd_level]][[input$lpd_norm]]
-    mset$sample_table$Responder = responders[mset$sample_table$Subject]
+    mset$sample_table$Responder = responders[as.character(mset$sample_table$Subject)]
     mset
 })
 

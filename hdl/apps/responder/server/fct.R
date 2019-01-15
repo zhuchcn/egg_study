@@ -7,7 +7,7 @@ fct_data1 = reactive({
     names(responders) = data$fct$sample_table$Subject
     mset = data$fct
     mset = subset_features(mset, 2:9)
-    mset$sample_table$Responder = responders[mset$sample_table$Subject]
+    mset$sample_table$Responder = responders[as.character(mset$sample_table$Subject)]
     mset
 })
 
