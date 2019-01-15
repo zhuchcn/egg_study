@@ -5,6 +5,7 @@ for(pkg in pkgs) {
 }
 
 load("data/data.rda")
+
 source("ui/sidebar.R")
 source("ui/body.R")
 
