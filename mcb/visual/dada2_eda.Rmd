@@ -1,0 +1,40 @@
+---
+title: "dada2 otu table eda"
+output: html_document
+---
+
+```{r}
+pkgs = c("dplyr", "stringr", "reshape2", "tibble", "data.table", "readxl", 
+         "tidyr", "Metabase", "ape")
+for(pkg in pkgs){
+    library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
+            character.only=TRUE)
+}
+```
+
+```{r}
+load("~/Documents/Zivkovic_Lab/egg_study/data/mcb.rda")
+```
+
+```{r}
+apply(mcb$conc_table, 2, function(c)sum(c!=0))
+colSums(mcb$conc_table)
+
+```
+
+```{r}
+mcb$conc_table %>% 
+    as.data.frame %>% 
+    rownames_to_column("featureID") %>% 
+    melt(variable.name = "subjectID") %>% 
+    mutate(subjectID = gsub("EGG([0-9]{3})[A-D]", "\\1", subjectID)) %>%
+    group_by(featureID, subjectID) %>%
+    summarize(num_zero_subj = sum(value == 0)) %>% 
+    ungroup() %>%
+    group_by(featureID) %>%
+    summarize(num_obsv_feat = sum(num_zero_subj < 4)) %>% 
+    mutate(num_unobsv = 19 - num_obsv_feat) %>% 
+    group_by(num_unobsv) %>%
+    summarize(featureCount = length(featureID))
+```
+

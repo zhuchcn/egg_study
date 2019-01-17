@@ -5,7 +5,6 @@ for(pkg in pkgs){
     library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
             character.only=TRUE)
 }
-
 setwd(dirname(parent.frame(2)$ofile))
 
 ################################################################################
@@ -29,8 +28,13 @@ rownames(tax_table) = str_c(
 otu_table = otu_table %>% as.matrix %>% conc_table()
 sample_data$Timepoint = factor(sample_data$Timepoint, 
                                levels = c("Pre", "Post"))
-sample_data$Treatment = factor(sample_data$Treatment,
-                               levels = c("Egg", "EggWhite"))
+sample_data = sample_data %>% 
+    mutate(Treatment = ifelse(Treatment == "Egg", "egg", "sub")) %>%
+    mutate(Treatment = factor(Treatment, levels = c("sub", "egg")))
+
+colnames(otu_table) = paste0("Egg",sample_data$SubjectID)
+rownames(sample_data) = paste0("Egg",sample_data$SubjectID)
+
 sample_data$Subject = gsub("^EG", "", sample_data$StudyID)
 sample_data = sample_table(sample_data)
 tax_table = feature_data(tax_table)
