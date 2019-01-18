@@ -1,6 +1,6 @@
 ## -------- load packages ------------------------------------------------------
 pkgs = c("dplyr", "stringr", "reshape2", "tibble", "data.table", "readxl", 
-         "tidyr", "Metabase")
+         "tidyr", "Metabase", "ape")
 for(pkg in pkgs){
     library(pkg, quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE, 
             character.only=TRUE)
@@ -11,11 +11,11 @@ setwd(dirname(parent.frame(2)$ofile))
 ##########                    M I C R O B I O M E                     ##########
 ################################################################################
 
-otu_table = read.table('../16s_processing/dada2/feature_table.tsv', 
+otu_table = read.table('../raw_data/feature_table.tsv', 
                        sep = '\t', header=T, stringsAsFactor=F, row.names = 1)
-tax_table = read.table('../16s_processing/dada2/taxonomy.tsv', 
+tax_table = read.table('../raw_data/taxonomy.tsv', 
                        sep='\t', header=T, stringsAsFactor=F, row.names = 1)
-sample_data = read.table('../16s_processing/dada2/sample_metadata.tsv', 
+sample_data = read.table('../raw_data/sample_metadata.tsv', 
                          sep='\t', header=T, stringsAsFactors = F, row.names = 1)
 rownames(otu_table) = str_c(
     "MCB", str_pad(rownames(otu_table), width = 4, pad = "0")
@@ -41,6 +41,9 @@ tax_table = feature_data(tax_table)
 mcb = MicrobiomeSet(otu_table, sample_data, tax_table)
 
 sampleNames(mcb) = str_c("EGG",mcb$sample_table$SubjectID)
+
+tree = read.tree(file = "../raw_data/tree.nwk")
+tree$tip.label = paste0("MCB",tree$tip.label)
 
 ################################################################################
 ##########               B I O G E N I C   A M I N E S                ##########
@@ -136,4 +139,4 @@ bac = subset_features(
 ################################################################################
 ##########                          S A V E                           ##########
 ################################################################################
-save(mcb, bga, bac, file = "mcb.rda")
+save(mcb, bga, bac, tree, file = "mcb.rda")
