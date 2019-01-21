@@ -3,6 +3,7 @@
 .RData
 raw_data/
 hdl/figures
+hdl/figures2
 16s_processing/
 .DS_Store
 diet/.DS_Store

@@ -1,0 +1,39 @@
+---
+title: "Table for Responders"
+output: word_document
+params:
+    data: NA
+    pval: NA
+    model: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FALSE)
+```
+
+```{r}
+pkgs = c("dplyr", "tibble", "reshape2", "stringr", "glue", "Metabase",
+         "knitr", "kableExtra")
+for(pkg in pkgs) {
+    library(pkg, character.only = TRUE)
+}
+```
+
+P values were calcualted using `r params$model`
+
+```{r}
+params$data$conc_table %>%
+    t %>%
+    cbind(params$data$sample_table[,c("Subject", "Responder")]) %>%
+    melt(id.vars = c("Subject", "Responder")) %>%
+    group_by(Responder, variable) %>%
+    summarize(
+        value = glue(
+            "{round(mean(value, na.rm=TRUE), 1)} ({round(sd(value, na.rm=TRUE), 2)})"
+        )
+    ) %>%
+    dcast(variable ~ Responder) %>%
+    mutate(pvalue = round(params$pval, 3)) %>%
+    kable(format = "markdown")
+```
+

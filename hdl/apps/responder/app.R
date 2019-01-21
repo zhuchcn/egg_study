@@ -33,7 +33,8 @@ server <- function(input, output, session) {
     shinyjs::addClass(class="nav-justified", selector = ".nav")
     shinyjs::addClass(class="btn btn-primary", selector = "ul.nav > li> a")
     shinyjs::addClass(class="btn btn-warning", selector = "ul.nav > li > a")
-
+    shinyjs::removeClass(class="btn-default", selector = "#cli_rmd1")
+    shinyjs::removeClass(class="btn-default", selector = "#cli_rmd2")
 }
 
 # Run the application 
