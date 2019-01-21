@@ -4,7 +4,7 @@ output$VarsInput = renderUI({
             selectInput(
                 "responders","Select Responders",
                 choices = levels(data$fct$sample_table$Subject),
-                selected = c(101, 104, 105, 107, 108, 110, 111, 113, 114, 119, 123, 124),
+                selected = as.character(c(101, 104, 105, 107, 108, 110, 111, 113, 114, 119, 123, 124)),
                 multiple = TRUE,
                 selectize = TRUE
             ),

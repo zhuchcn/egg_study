@@ -42,8 +42,26 @@ lpd_stat1 = reactive({
 
 lpd_stat2 = reactive({
     mset = lpd_data2()
-    design = model.matrix(data = as(mset$sample_table, "data.frame"),
-                          ~ Responder * Timepoint + 1)
+    
+    df = mset$conc_table %>%
+        t %>% as.data.frame %>%
+        cbind(mset$sample_table[,c("Subject", "Timepoint", "Responder")]) %>%
+        melt(id.vars = c("Subject", "Timepoint", "Responder")) %>%
+        dcast(Subject + variable + Responder ~ Timepoint) %>%
+        mutate(value = post - pre) %>%
+        dcast(Subject + Responder ~ variable)
+    
+    edata = df[,-2] %>%
+        column_to_rownames("Subject") %>% t %>%
+        conc_table
+    
+    pdata = df[,1:2]
+    rownames(pdata) = pdata$Subject
+    pdata = sample_table(pdata)
+    
+    mset = LipidomicsSet(conc_table = edata, sample_table = pdata)
+    
+    design = model.matrix(~ Responder, data = as(mset$sample_table, "data.frame"))
     mSet_limma(mset, design, coef = 2, p.value = 2) %>%
         rownames_to_column("feature") %>%
         arrange(pvalue) %>%
