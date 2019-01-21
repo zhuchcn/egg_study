@@ -88,11 +88,14 @@ output$cli_boxplot2 = renderPlotly({
 output$cli_rmd1 = downloadHandler(
     filename = "cli_table.docx",
     content = function(file) {
+        tempFile = file.path(tempdir(), "cli_table.Rmd")
+        file.copy("rmd/cli_table.Rmd", tempFile, overwrite = TRUE)
+        
         params = list(data = cli_data1(),
                       pval = cli_stat1()$pvalue,
                       model = "Model 1")
         
-        rmarkdown::render("rmd/cli_table.Rmd", output_format = "word_document", 
+        rmarkdown::render(tempFile, output_format = "word_document", 
                           output_file = file, params = params,
                           envir = new.env(parent = globalenv()))
     }
@@ -101,14 +104,14 @@ output$cli_rmd1 = downloadHandler(
 output$cli_rmd2 = downloadHandler(
     filename = "cli_table.docx",
     content = function(file) {
-        # tempFile = file.path(tempdir(), "cli_table.Rmd")
-        # file.copy("rmd/cli_table.Rmd", tempFile, overwrite = TRUE)
+        tempFile = file.path(tempdir(), "cli_table.Rmd")
+        file.copy("rmd/cli_table.Rmd", tempFile, overwrite = TRUE)
         
         params = list(data = cli_data2(),
                       pval = cli_stat2()$pvalue,
                       model = "Model 2")
         
-        rmarkdown::render("rmd/cli_table.Rmd", output_format = "word_document", 
+        rmarkdown::render(tempFile, output_format = "word_document", 
                           output_file = file, params = params,
                           envir = new.env(parent = globalenv()))
     }
