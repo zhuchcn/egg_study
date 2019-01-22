@@ -33,7 +33,9 @@ getData1 = function(input, data, type){
         responders = factor(responders, levels = c("Non-responder", "Responder"))
         names(responders) = data$sample_table$Subject
         mset = data
-        mset = subset_features(mset, 2:9)
+        if(type == "fct"){
+            mset = subset_features(mset, 2:9)
+        }
         mset$sample_table$Responder = responders[as.character(mset$sample_table$Subject)]
         mset
     })
