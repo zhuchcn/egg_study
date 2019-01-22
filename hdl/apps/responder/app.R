@@ -1,13 +1,15 @@
-pkgs = c("shiny", "dplyr", "reshape2", "stringr", "tibble", 
+pkgs = c("shiny", "dplyr", "reshape2", "stringr", "tibble", "glue",
          "DT", "plotly", "Metabase", "shinydashboard")
 for(pkg in pkgs) {
     library(pkg, character.only = T, quietly = T, verbose = F, warn.conflicts = F)
 }
 
+source("global.R", local = T)
+
 load("data/data.rda")
 
-source("ui/sidebar.R")
-source("ui/body.R")
+source("ui/sidebar.R", local = T)
+source("ui/body.R", local = T)
 
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
@@ -25,16 +27,18 @@ server <- function(input, output, session) {
     # Inputs
     source("ui/inputs.R", local = T)
     
-    source("server/lpd.R", local = T)
-    source("server/fct.R", local = T)
-    source("server/cli.R", local = T)
-    source("server/diet.R", local = T)
+    for (script in list.files("server", full.names = TRUE)){
+        source(script, local = T)
+    }
     
     shinyjs::addClass(class="nav-justified", selector = ".nav")
-    shinyjs::addClass(class="btn btn-primary", selector = "ul.nav > li> a")
-    shinyjs::addClass(class="btn btn-warning", selector = "ul.nav > li > a")
     shinyjs::removeClass(class="btn-default", selector = "#cli_rmd1")
     shinyjs::removeClass(class="btn-default", selector = "#cli_rmd2")
+    
+    for(tabName in c("lpd", "fct", "cli", "diet")){
+        navTabClassHandler(tabName = tabName, input = input)
+    }
+    
 }
 
 # Run the application 

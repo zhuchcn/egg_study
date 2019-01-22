@@ -1,35 +1,26 @@
 output$VarsInput = renderUI({
-    if(input$sidebar == "lpd"){
-        tagList(
-            selectInput(
-                "responders","Select Responders",
-                choices = levels(data$fct$sample_table$Subject),
-                selected = as.character(c(101, 104, 105, 107, 108, 110, 111, 113, 114, 119, 123, 124)),
-                multiple = TRUE,
-                selectize = TRUE
-            ),
-            selectInput(
-                'lpd_level', "Lipid class, species, or summarized values",
-                choices = names(data$lpd), selected = names(data$lpd)[1]
-            ),
-            uiOutput('lpdNormSelect')
-        )
-    } else if (input$sidebar == "diet") {
-        tagList(
-            selectInput(
-                "responders","Select Responders",
-                choices = levels(data$fct$sample_table$Subject),
-                selected = c(101, 104, 105, 107, 108, 110, 111, 113, 114, 119, 123, 124),
-                multiple = TRUE,
-                selectize = TRUE
-            ),
+    tagList(
+        selectInput(
+            "responders","Select Responders",
+            choices = levels(data$fct$sample_table$Subject),
+            selected = as.character(c(101, 104, 105, 107, 108, 110, 111, 113, 114, 119, 123, 124)),
+            multiple = TRUE,
+            selectize = TRUE
+        ),
+        if(input$sidebar == "lpd"){
+            tagList(
+                selectInput(
+                    'lpd_level', "Lipid class, species, or summarized values",
+                    choices = names(data$lpd), selected = names(data$lpd)[1]
+                ),
+                uiOutput('lpdNormSelect')
+            )
+        } else if (input$sidebar == "diet") {
             selectInput(
                 'diet_level', "Use raw measurements or percentage?",
                 choices = names(data$diet), selected = names(data$diet)[1]
             )
-        )
-    } else {
-        tagList(
+        } else {
             selectInput(
                 "responders","Select Responders",
                 choices = levels(data$fct$sample_table$Subject),
@@ -37,8 +28,8 @@ output$VarsInput = renderUI({
                 multiple = TRUE,
                 selectize = TRUE
             )
-        )
-    }
+        }
+    )
 })
 
 # lpd norm method selector

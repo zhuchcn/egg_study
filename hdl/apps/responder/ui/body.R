@@ -4,8 +4,10 @@ tabItemGenerator = function(tabName){
         fluidRow(
             tabsetPanel(
                 type = "pills",
+                id = paste0(tabName, "_tab"),
                 tabPanel(
                     "Model 1", 
+                    value = paste0(tabName, "_model1"),
                     tagList(
                         column(
                             width = 6,
@@ -19,11 +21,21 @@ tabItemGenerator = function(tabName){
                                 plotlyOutput(paste0(tabName, '_boxplot1'), 
                                              height = "500px")
                             )
+                        ),
+                        tags$div(
+                            if(tabName == "cli") {
+                                column(
+                                    width = 12,
+                                    downloadButton("cli_rmd1", "Download Summarized Table",
+                                                   class = "btn-primary disabled")
+                                )
+                            }
                         )
                     )
                 ),
                 tabPanel(
                     "Model 2",
+                    value = paste0(tabName, "_model2"),
                     column(
                         width = 6,
                         box(width = NULL,
@@ -36,63 +48,21 @@ tabItemGenerator = function(tabName){
                             plotlyOutput(paste0(tabName, '_boxplot2'), 
                                          height = "500px")
                         )
+                    ),
+                    tags$div(
+                        if (tabName == "cli") {
+                            column(
+                                width = 12,
+                                downloadButton("cli_rmd2", "Download Summarized Table",
+                                               class = "btn-primary disabled")
+                            )
+                        }
                     )
                 )
             )
         )
     )
 }
-
-cliTab = tabItem(
-    tabName = "cli",
-    fluidRow(
-        tabsetPanel(
-            type = "pills",
-            tabPanel(
-                "Model 1", 
-                tagList(
-                    column(
-                        width = 6,
-                        box(width = NULL,
-                            DT::DTOutput('cli_stat1')
-                        )
-                    ),
-                    column(
-                        width = 6,
-                        box(width = NULL,
-                            plotlyOutput('cli_boxplot1', height = "500px")
-                        )
-                    ),
-                    column(
-                        width = 12,
-                        downloadButton("cli_rmd1", "Download Summarized Table",
-                                       class = "btn-primary")
-                    )
-                )
-            ),
-            tabPanel(
-                "Model 2",
-                column(
-                    width = 6,
-                    box(width = NULL,
-                        DT::DTOutput('cli_stat2')
-                    )
-                ),
-                column(
-                    width = 6,
-                    box(width = NULL,
-                        plotlyOutput('cli_boxplot2', height = "500px")
-                    )
-                ),
-                column(
-                    width = 12,
-                    downloadButton("cli_rmd2", "Download Summarized Table",
-                                   class = "btn-primary")
-                )
-            )
-        )
-    )
-)
 
 body = dashboardBody(
     shinyjs::useShinyjs(),
@@ -103,7 +73,7 @@ body = dashboardBody(
     tabItems(
         tabItemGenerator("lpd"),
         tabItemGenerator("fct"),
-        cliTab,
+        tabItemGenerator("cli"),
         tabItemGenerator("diet")
     )
 )
