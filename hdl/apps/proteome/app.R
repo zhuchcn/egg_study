@@ -1,6 +1,6 @@
 pkgs = c("shiny", "shinydashboard", "dplyr", "reshape2", "Metabase",
          "ggplot2", "plotly", "DT", "ggsci", "tibble", "ggmetaplots",
-         "heatmaply", "glue")
+         "heatmaply", "glue", "stringr")
 for(pkg in pkgs){
     library(pkg, character.only = TRUE)
 }

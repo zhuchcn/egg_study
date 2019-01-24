@@ -68,7 +68,7 @@ prtHeatmapTab = tabItem(
                                  "loged absolute scale"
                              ),
                              choiceValues = c(
-                                 "zscore", "abs-scale", "log", "log z-score",
+                                 "z-score", "abs-scale", "log", "log z-score",
                                  "log abs-score"
                              )),
                 tags$hr(),
