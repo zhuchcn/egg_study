@@ -1,7 +1,8 @@
 pkgs = c("shiny", "shinydashboard", "dplyr", "reshape2", "Metabase",
-         "ggplot2", "plotly", "DT", "ggsci", "tibble", "ggmetaplots")
+         "ggplot2", "plotly", "DT", "ggsci", "tibble", "ggmetaplots",
+         "heatmaply", "glue")
 for(pkg in pkgs){
-    library(pkg, character.only = TRUE, quietly = TRUE, verbose = FALSE, warn.conflicts = FALSE)
+    library(pkg, character.only = TRUE)
 }
 
 load("data/data.rda")
@@ -21,16 +22,9 @@ server <- function(input, output) {
     # import inputs
     source("ui/inputs.R", local = TRUE)
     
-    # Proteome
-    source("server/prt/boxplot.R", local = TRUE)
-    source("server/prt/corr_lpd.R", local = TRUE)
-    source("server/prt/corr_fct.R", local = TRUE)
-    
-    # Lipidome
-    source("server/lpd/boxplot.R", local = TRUE)
-    
-    # Function
-    source("server/fct/boxplot.R", local = TRUE)
+    for (script in list.files("server", recursive = T, full.names = T)) {
+        source(script, local = TRUE)
+    }
 }
 
 # Run the application 

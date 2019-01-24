@@ -9,6 +9,7 @@ sidebar = dashboardSidebar(
         menuItem(
             icon = icon("caret-right"), "Proteome", 
             menuSubItem("Box Plot", tabName = "prt_boxplot"),
+            menuSubItem("Heatmap & PCA", tabName = "prt_heatmap"),
             menuSubItem("vs Lipidome", tabName = "prt_lpd"),
             menuSubItem("vs HDL Functions", tabName = "prt_fct")
         ),

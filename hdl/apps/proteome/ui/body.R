@@ -35,6 +35,53 @@ corrPlotTabGenerator = function(tabName) {
     )
 }
 
+prtHeatmapTab = tabItem(
+    tabName = "prt_heatmap",
+    fluidRow(
+        column(
+            width = 9,
+            box(
+                width = NULL,
+                tabsetPanel(
+                    tabPanel(
+                        "Heatmap",
+                        uiOutput("ui_prt_heatmap")
+                    ),
+                    tabPanel(
+                        "PCA",
+                        plotlyOutput("prt_pca")
+                    )
+                )
+            )
+        ),
+        column(
+            width = 3,
+            box(
+                width = NULL,
+                numericInput("prt.cutoff", "P-value cut off",
+                             min = 0, max = 1, value = 0.4),
+                tags$hr(),
+                radioButtons("prt.scale", "A scale method",
+                             choiceNames = c(
+                                 "Z-score scale", "Absolute scale",
+                                 "log scale", "loged z-score scale", 
+                                 "loged absolute scale"
+                             ),
+                             choiceValues = c(
+                                 "zscore", "abs-scale", "log", "log z-score",
+                                 "log abs-score"
+                             )),
+                tags$hr(),
+                checkboxInput("prt.collapse", "Collapse between pre & post?",
+                              value = FALSE),
+                tags$hr(),
+                numericInput("prt.hm_ht", "Adjust the height of the heatmap",
+                             min = 400, max = 1000, value = 400)
+            )
+        )
+    )
+)
+
 body = dashboardBody(
     tags$head(
         tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
@@ -42,6 +89,7 @@ body = dashboardBody(
     tabItems(
         # Proteome
         boxPlotTabGenerator("prt_boxplot"),
+        prtHeatmapTab,
         corrPlotTabGenerator("prt_lpd"),
         corrPlotTabGenerator("prt_fct"),
         ## Lipidome
