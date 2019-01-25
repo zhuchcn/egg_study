@@ -25,6 +25,16 @@ server <- function(input, output) {
     for (script in list.files("server", recursive = T, full.names = T)) {
         source(script, local = TRUE)
     }
+    
+    observe({
+        if(input$prt.cutoff_type == "p-values") {
+            shinyjs::enable("prt.cutoff")
+            shinyjs::disable("prt.topn")
+        } else if (input$prt.cutoff_type == "abundance") {
+            shinyjs::disable("prt.cutoff")
+            shinyjs::enable("prt.topn")
+        }
+    })
 }
 
 # Run the application 

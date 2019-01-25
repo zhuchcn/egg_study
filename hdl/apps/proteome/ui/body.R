@@ -49,7 +49,7 @@ prtHeatmapTab = tabItem(
                     ),
                     tabPanel(
                         "PCA",
-                        plotlyOutput("prt_pca")
+                        shinyjqui::jqui_resizable(plotlyOutput("prt_pca"))
                     )
                 )
             )
@@ -58,8 +58,27 @@ prtHeatmapTab = tabItem(
             width = 3,
             box(
                 width = NULL,
-                numericInput("prt.cutoff", "P-value cut off",
-                             min = 0, max = 1, value = 0.4),
+                radioButtons(
+                    "prt.cutoff_type","Filter proteins",
+                    choices = c("p-values", "abundance"),
+                    inline = TRUE
+                ),
+                tags$div(
+                    class = "col-md-6",
+                    style = "padding-left: 0px",
+                    numericInput("prt.cutoff", "P-value cut off",
+                                 min = 0, max = 1, value = 0.4, step = 0.05)
+                ),
+                tags$div(
+                    class = "col-md-6",
+                    style = "padding-right: 0px",
+                    numericInput("prt.topn", "Most abundant",
+                                 min = 1, max = 73, step = 1, value = 20)
+                ),
+                tags$hr(),
+                selectInput("prt.exclude", "Proteins to exclude",
+                            choices = featureNames(data$data$prt$iBAQ),
+                            multiple = TRUE),
                 tags$hr(),
                 radioButtons("prt.scale", "A scale method",
                              choiceNames = c(
@@ -75,19 +94,15 @@ prtHeatmapTab = tabItem(
                 checkboxInput("prt.collapse", "Collapse between pre & post?",
                               value = FALSE),
                 tags$hr(),
-                shinyjs::disabled(
-                    numericInput("prt.hm_ht", "Adjust the height of the heatmap",
-                                 min = 400, max = 1000, value = 400)
-                ),
                 tags$button(
                     type = "button",
                     class = "btn btn-danger",
                     'data-toggle' = "popover",
-                    title = "Why is it disabled?",
-                    'data-content' = "The heatmap can now be resized by dragging the little triangle at the right bottom corner. Figured that's a better UI..",
+                    title = "Resize it?",
+                    'data-content' = "If the aspect ratio look strange, resize it by dragging on the little triangle at the right bottom cornor.",
                     'data-placement' = "bottom",
                     'data-trigger' ="focus",
-                    "Why is it disabled?"
+                    "Resize it?"
                 )
             )
         )
@@ -96,8 +111,7 @@ prtHeatmapTab = tabItem(
 
 body = dashboardBody(
     tags$head(
-        tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
-        tags$script(src = "scripts.js")
+        tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
     ),
     tabItems(
         # Proteome
@@ -109,5 +123,6 @@ body = dashboardBody(
         boxPlotTabGenerator("lpd_boxplot"),
         ## Functions
         boxPlotTabGenerator("fct_boxplot")
-    )
+    ),
+    tags$script(src = "scripts.js")
 )

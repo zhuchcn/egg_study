@@ -1,11 +1,17 @@
-output$ui_prt_heatmap = renderUI({
-    plotlyOutput("prt_heatmap", height = paste0(input$prt.hm_ht, "px"))
-})
-
 prtDataForHeatMap = reactive({
     mset = data$data$prt[[input$prt.level]]
-    lm = data$lm$prt[[input$prt.level]]
-    mset = subset_features(mset, lm$pvalue <= input$prt.cutoff)
+    
+    mset = subset_features(mset, !featureNames(mset) %in% input$prt.exclude)
+    
+    if(input$prt.cutoff_type == "p-values") {
+        lm = data$lm$prt[[input$prt.level]]
+        lm = lm[!rownames(lm) %in% input$prt.exclude,]
+        mset = subset_features(mset, lm$pvalue <= input$prt.cutoff)   
+    } else if (input$prt.cutoff_type == "abundance") {
+        intensity = data$data$prt$intensity
+        topN = order(rowMeans(intensity$conc_table, na.rm = TRUE),decreasing = T)[1:input$prt.topn]
+        mset = subset_features(mset, topN)
+    }
     
     if (input$prt.collapse) {
         cbind(
