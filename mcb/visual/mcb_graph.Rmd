@@ -1,0 +1,55 @@
+---
+title: "mcb_graph"
+output: html_document
+---
+
+```{r}
+library(phyloseq)
+library(phylox)
+library(ggplot2)
+library(ggmetaplots)
+```
+
+```{r}
+load("~/Documents/Zivkovic_Lab/egg_study/data/mcb.rda")
+```
+
+```{r}
+ps = as_phyloseq(mcb)
+```
+
+```{r}
+sum_ps = summarizeFromPhyloseq(ps)
+ps_prop = transform_sample_counts(ps, function(x) x/sum(x))
+sum_ps_prop = summarizeFromPhyloseq(ps_prop)
+```
+
+### 1. composition of microbiome differ in groups at different phylogenic level (bar)
+(egg: pre / post, eggwhite: pre / post)
+
+```{r}
+plot_bar(sum_ps_prop, level = "Phylum", by = c("Timepoint", "Treatment"))
+```
+
+### 2. otu diversity (alpha) boxplot diversity difference in groups(trt)
+
+```{r}
+plot_richness(ps, x = "Timepoint", measures = "Shannon") +
+    geom_boxplot(lwd = 0.7) +
+    geom_line(aes(group = Subject, color = Subject)) +
+    geom_point(aes(color = Subject)) +
+    facet_grid(cols = vars(Treatment)) 
+```
+### 3. otu difference among groups (boxplot by phylogenic level and something else)
+```{r}
+df = data.frame(OTU = as.numeric(otu_table(ps_prop)[1,]), SubjectID = sample_data(ps_prop)$SubjectID, Treatment = sample_data(ps_prop)$Treatment, Timepoint = sample_data(ps_prop)$Timepoint)
+
+p <- ggplot(df, aes(df$Timepoint, df$OTU))
+p + geom_boxplot() +
+    facet_grid(cols = vars(df$Treatment))
+```
+
+4. beta diversity (tree)
+diversity in same sample, group
+
+
