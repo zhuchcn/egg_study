@@ -11,6 +11,10 @@ library(ggmetaplots)
 ```
 
 ```{r}
+# Avoid using absolute path in the future. Because if I run this in my computer,
+# it won't be able to find the path. We had this conversation before.
+# Use relative path:
+# load("../../data/mcb.rda")
 load("~/Documents/Zivkovic_Lab/egg_study/data/mcb.rda")
 ```
 
@@ -42,11 +46,24 @@ plot_richness(ps, x = "Timepoint", measures = "Shannon") +
 ```
 ### 3. otu difference among groups (boxplot by phylogenic level and something else)
 ```{r}
+## Avoid haveing your code longer than 80 characters per line. It's OK if it is
+## a little too long, but not like this. 
+## So follow this coding style in the future.
+# df = data.frame(OTU = as.numeric(otu_table(ps_prop)[1,]), 
+#     SubjectID = sample_data(ps_prop)$SubjectID, 
+#     Treatment = sample_data(ps_prop)$Treatment, 
+#     Timepoint = sample_data(ps_prop)$Timepoint
+# )
 df = data.frame(OTU = as.numeric(otu_table(ps_prop)[1,]), SubjectID = sample_data(ps_prop)$SubjectID, Treatment = sample_data(ps_prop)$Treatment, Timepoint = sample_data(ps_prop)$Timepoint)
 
+# In ggplot, inside the aes(), you don't need to specify the data.frame.
+# Wierd thing could happen if you do that. So this is just fine:
+# p = ggplot(df, aes(Timepoint, OTU))
 p <- ggplot(df, aes(df$Timepoint, df$OTU))
 p + geom_boxplot() +
     facet_grid(cols = vars(df$Treatment))
+# Add points on the top of the boxes, and draw lines to connect up the two points
+# that belong to the same person, just like what we did above
 ```
 
 4. beta diversity (tree)
