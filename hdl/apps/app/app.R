@@ -19,25 +19,10 @@ ui <- dashboardPage(
 server <- function(input, output) {
     source("ui/inputs.R",          local = TRUE)
     
-    source("server/lpd/boxplot.R",  local = TRUE)
-    source("server/lpd/hist.R",     local = TRUE)
-    source("server/lpd/pie.R",      local = TRUE)
-    source("server/lpd/corr_imb.R", local = TRUE)
-    source("server/lpd/corr_fct.R", local = TRUE)
-    source("server/lpd/corr_cli.R", local = TRUE)
-    
-    source("server/imb/boxplot.R",  local = TRUE)
-    source("server/imb/corr_fct.R", local = TRUE)
-    source("server/imb/corr_cli.R", local = TRUE)
-    source("server/imb/corr_diet.R", local = TRUE)
-
-    source("server/fct/boxplot.R",  local = TRUE)
-    source("server/fct/corr_fct.R", local = TRUE)
-    source("server/fct/corr_cli.R", local = TRUE)
-    
-    source("server/cli/boxplot.R",  local = TRUE)
-    
-    source("server/diet/boxplot.R",  local = TRUE)
+    for(script in list.files("server", full.names = TRUE, 
+                             recursive = T, include.dirs = T)){
+        source(script, local = TRUE)
+    }
 }
 
 # Run the application 
