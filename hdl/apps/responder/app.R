@@ -35,7 +35,7 @@ server <- function(input, output, session) {
     shinyjs::removeClass(class="btn-default", selector = "#cli_rmd1")
     shinyjs::removeClass(class="btn-default", selector = "#cli_rmd2")
     
-    for(tabName in c("lpd", "fct", "cli", "diet")){
+    for(tabName in c("lpd", "fct", "imb", "cli", "diet")){
         navTabClassHandler(tabName = tabName, input = input)
     }
     

@@ -8,6 +8,7 @@ sidebar = dashboardSidebar(
         id = "sidebar",
         menuItem("Lipidome", tabName = "lpd", newtab = FALSE),
         menuItem("HDL Functions", tabName = "fct", newtab = FALSE),
+        menuItem("Ion Morbility", tabName = "imb", newtab = FALSE),
         menuItem("Clinical Values", tabName = "cli", newtab = FALSE),
         menuItem("Diet", tabName = "diet", newtab = FALSE)
     )

@@ -73,6 +73,7 @@ body = dashboardBody(
     tabItems(
         tabItemGenerator("lpd"),
         tabItemGenerator("fct"),
+        tabItemGenerator("imb"),
         tabItemGenerator("cli"),
         tabItemGenerator("diet")
     )

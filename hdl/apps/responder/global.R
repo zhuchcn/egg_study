@@ -45,17 +45,21 @@ getData1 = function(input, data, type){
 fitStatModel1 = function(mset, type){
     mset =  t(mset$conc_table) %>%
         as.data.frame() %>%
-        cbind(mset$sample_table[,c("Subject", "Timepoint", "Treatment", "Responder")]) %>%
+        cbind(mset$sample_table[,c("Subject", "Timepoint", "Treatment", "Responder")]) %>% 
         melt(id.vars=c("Subject", "Treatment", "Timepoint", "Responder"),
-             variable.name = "Lipid") %>%
-        dcast(Subject + Treatment + Responder + Lipid ~ Timepoint) %>%
+             variable.name = "Variable") %>% 
+        dcast(Subject + Treatment + Responder + Variable ~ Timepoint) %>%
         mutate(value = 
                    if(type %in% c("lpd", "fct")) post - pre
                    else Post - Pre
-               ) %>%
-        dcast(Subject + Responder + Lipid ~ Treatment, value.var = "value") %>%
-        mutate(value = egg - sub) %>%
-        dcast(Subject + Responder ~ Lipid, value.var = "value")
+               ) %>% 
+        dcast(Subject + Responder + Variable ~ Treatment, value.var = "value") %>%
+        mutate(
+            value = 
+                if(type == "imb") egg - white
+                else egg - sub
+        ) %>%
+        dcast(Subject + Responder ~ Variable, value.var = "value")
     rownames(mset) = mset$Subject
     mset = MultxSet(
         conc_table = conc_table(t(mset[,-(1:2)])),

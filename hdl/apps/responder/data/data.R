@@ -6,6 +6,7 @@ load("../../app/data/data.rda")
 
 data = list(
     lpd = data$data$lpd,
+    imb = data$data$imb,
     fct = data$data$fct,
     cli = data$data$cli,
     diet = data$data$diet
