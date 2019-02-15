@@ -1,5 +1,5 @@
 ---
-title: "mcb_graph"
+runtime: shiny
 output: html_document
 ---
 
@@ -8,6 +8,8 @@ library(phyloseq)
 library(phylox)
 library(ggplot2)
 library("ape")
+library(shiny)
+library(plotly)
 ```
 
 ```{r}
@@ -15,7 +17,7 @@ load("../../data/mcb.rda")
 ```
 
 ```{r}
-ps = as_phyloseq(mcb)
+ps = Metabase::as_phyloseq(mcb)
 ```
 
 ```{r}
@@ -26,34 +28,69 @@ sum_ps_prop = summarizeFromPhyloseq(ps_prop)
 
 ### 1. composition of microbiome differ in groups at different phylogenic level (bar) (egg: pre / post, eggwhite: pre / post)
 
-```{r}
-plot_bar(sum_ps_prop, level = "Phylum", by = c("Timepoint", "Treatment"))
+```{r echo=FALSE}
+selectInput("level_bar", label = "Choose a phylogenic level:",
+            choices =   c("kingdom", "phylum", "class", "order", 
+                          "family", "genus", "species"),
+            selected = "phylum")
+```
+
+```{r echo=FALSE}
+renderPlotly({
+    otu = slot(sum_ps_prop, paste0(input$level_bar, "_table"))
+    otu = otu[rownames(otu) != "NA",]
+    ps = phyloseq(otu, sample_data(sum_ps_prop))
+    plot_bar(ps, level = "OTU", by = c("Timepoint", "Treatment")) +
+        guides(fill = guide_legend(title = input$level_bar))
+})
 ```
 
 ### 2. otu diversity (alpha) boxplot diversity difference in groups(trt)
+```{r}
+selectInput("level_measure", label = "Choose a measure level:",
+            choices =   c("Observed", "Chao1", "ACE", "Shannon", 
+                          "Simpson", "InvSimpson", "Fisher"),
+            selected = "Shannon")
+```
 
 ```{r}
-plot_richness(ps, x = "Timepoint", measures = "Shannon") +
+renderPlotly({
+    plot_richness(ps, x = "Timepoint", measures = input$level_measure) +
     geom_boxplot(lwd = 0.7) +
     geom_line(aes(group = Subject, color = Subject)) +
     geom_point(aes(color = Subject)) +
     facet_grid(cols = vars(Treatment)) 
+})
 ```
 
 ### 3. otu difference among groups (boxplot by phylogenic level and something else)
+
 ```{r}
-df = data.frame(OTU = as.numeric(otu_table(ps_prop)[1,]), 
-                SubjectID = sample_data(ps_prop)$SubjectID, 
-                Treatment = sample_data(ps_prop)$Treatment, 
-                Timepoint = sample_data(ps_prop)$Timepoint)
+selectInput("level_box", label = "Choose a phylo level:",
+            choices =   c("kingdom", "phylum", "class", "order", 
+                          "family", "genus", "species", "otu"),
+            selected = "phylum")
+renderUI({
+    otu = slot(sum_ps_prop, paste0(input$level_box, "_table"))
+    selectInput("taxon_box", label = "Choose a feature: ",
+                choices = rownames(otu), selected = rownames(otu[1,]))
+})
+```
 
-df$SubjectID = gsub(pattern = "\\D", replacement = "", df$SubjectID)
-
-p = ggplot(df, aes(Timepoint, OTU))
-p + geom_boxplot(lwd = 0.7) +
-    geom_point(aes(color = SubjectID)) +
-    geom_line(aes(group = SubjectID, color = SubjectID)) +
-    facet_grid(cols = vars(Treatment))
+```{r}
+renderPlotly({
+    otu = slot(sum_ps_prop, paste0(input$level_box, "_table"))
+    df = data.frame(otu = as.numeric(otu[input$taxon_box,]), 
+                studyID = sample_data(sum_ps_prop)$StudyID, 
+                treatment = sample_data(sum_ps_prop)$Treatment, 
+                timepoint = sample_data(sum_ps_prop)$Timepoint)
+    
+    p = ggplot(df, aes(timepoint, otu))
+    p + geom_boxplot(lwd = 0.7) +
+        geom_point(aes(color = studyID)) +
+        geom_line(aes(group = studyID, color = studyID)) +
+        facet_grid(cols = vars(treatment))
+})
 ```
 
 4. beta diversity (tree)
