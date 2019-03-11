@@ -14,7 +14,8 @@ ui <- dashboardPage(
     sidebar = dashboardSidebar(
         
         sidebarMenu(
-            menuItem("Home", icon = icon("home"), newtab = FALSE)
+            menuItem("Home", icon = icon("home"), newtab = FALSE,
+                     href="http://www.chenghaozhu.net/studies/egg/mcb.html")
         ),
         
         sidebarMenu(
