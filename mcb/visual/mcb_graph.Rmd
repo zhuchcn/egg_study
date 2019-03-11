@@ -1,5 +1,5 @@
 ---
-title: "mcb_graph"
+runtime: shiny
 output: html_document
 ---
 
@@ -7,19 +7,17 @@ output: html_document
 library(phyloseq)
 library(phylox)
 library(ggplot2)
-library(ggmetaplots)
+library("ape")
+library(shiny)
+library(plotly)
 ```
 
 ```{r}
-# Avoid using absolute path in the future. Because if I run this in my computer,
-# it won't be able to find the path. We had this conversation before.
-# Use relative path:
-# load("../../data/mcb.rda")
-load("~/Documents/Zivkovic_Lab/egg_study/data/mcb.rda")
+load("../../data/mcb.rda")
 ```
 
 ```{r}
-ps = as_phyloseq(mcb)
+ps = Metabase::as_phyloseq(mcb)
 ```
 
 ```{r}
@@ -28,45 +26,89 @@ ps_prop = transform_sample_counts(ps, function(x) x/sum(x))
 sum_ps_prop = summarizeFromPhyloseq(ps_prop)
 ```
 
-### 1. composition of microbiome differ in groups at different phylogenic level (bar)
-(egg: pre / post, eggwhite: pre / post)
+### 1. composition of microbiome differ in groups at different phylogenic level (bar) (egg: pre / post, eggwhite: pre / post)
 
-```{r}
-plot_bar(sum_ps_prop, level = "Phylum", by = c("Timepoint", "Treatment"))
+```{r echo=FALSE}
+selectInput("level_bar", label = "Choose a phylogenic level:",
+            choices =   c("kingdom", "phylum", "class", "order", 
+                          "family", "genus", "species"),
+            selected = "phylum")
+```
+
+```{r echo=FALSE}
+renderPlotly({
+    otu = slot(sum_ps_prop, paste0(input$level_bar, "_table"))
+    otu = otu[rownames(otu) != "NA",]
+    ps = phyloseq(otu, sample_data(sum_ps_prop))
+    plot_bar(ps, level = "OTU", by = c("Timepoint", "Treatment")) +
+        guides(fill = guide_legend(title = input$level_bar))
+})
 ```
 
 ### 2. otu diversity (alpha) boxplot diversity difference in groups(trt)
+```{r}
+selectInput("level_measure", label = "Choose a measure level:",
+            choices =   c("Observed", "Chao1", "ACE", "Shannon", 
+                          "Simpson", "InvSimpson", "Fisher"),
+            selected = "Shannon")
+```
 
 ```{r}
-plot_richness(ps, x = "Timepoint", measures = "Shannon") +
+renderPlotly({
+    plot_richness(ps, x = "Timepoint", measures = input$level_measure) +
     geom_boxplot(lwd = 0.7) +
     geom_line(aes(group = Subject, color = Subject)) +
     geom_point(aes(color = Subject)) +
     facet_grid(cols = vars(Treatment)) 
+})
 ```
-### 3. otu difference among groups (boxplot by phylogenic level and something else)
-```{r}
-## Avoid haveing your code longer than 80 characters per line. It's OK if it is
-## a little too long, but not like this. 
-## So follow this coding style in the future.
-# df = data.frame(OTU = as.numeric(otu_table(ps_prop)[1,]), 
-#     SubjectID = sample_data(ps_prop)$SubjectID, 
-#     Treatment = sample_data(ps_prop)$Treatment, 
-#     Timepoint = sample_data(ps_prop)$Timepoint
-# )
-df = data.frame(OTU = as.numeric(otu_table(ps_prop)[1,]), SubjectID = sample_data(ps_prop)$SubjectID, Treatment = sample_data(ps_prop)$Treatment, Timepoint = sample_data(ps_prop)$Timepoint)
 
-# In ggplot, inside the aes(), you don't need to specify the data.frame.
-# Wierd thing could happen if you do that. So this is just fine:
-# p = ggplot(df, aes(Timepoint, OTU))
-p <- ggplot(df, aes(df$Timepoint, df$OTU))
-p + geom_boxplot() +
-    facet_grid(cols = vars(df$Treatment))
-# Add points on the top of the boxes, and draw lines to connect up the two points
-# that belong to the same person, just like what we did above
+### 3. otu difference among groups (boxplot by phylogenic level and something else)
+
+```{r}
+selectInput("level_box", label = "Choose a phylo level:",
+            choices =   c("kingdom", "phylum", "class", "order", 
+                          "family", "genus", "species", "otu"),
+            selected = "phylum")
+renderUI({
+    otu = slot(sum_ps_prop, paste0(input$level_box, "_table"))
+    selectInput("taxon_box", label = "Choose a feature: ",
+                choices = rownames(otu), selected = rownames(otu[1,]))
+})
+```
+
+```{r}
+renderPlotly({
+    otu = slot(sum_ps_prop, paste0(input$level_box, "_table"))
+    df = data.frame(otu = as.numeric(otu[input$taxon_box,]), 
+                studyID = sample_data(sum_ps_prop)$StudyID, 
+                treatment = sample_data(sum_ps_prop)$Treatment, 
+                timepoint = sample_data(sum_ps_prop)$Timepoint)
+    
+    p = ggplot(df, aes(timepoint, otu))
+    p + geom_boxplot(lwd = 0.7) +
+        geom_point(aes(color = studyID)) +
+        geom_line(aes(group = studyID, color = studyID)) +
+        facet_grid(cols = vars(treatment))
+})
 ```
 
 4. beta diversity (tree)
 diversity in same sample, group
+```{r}
+ps_prop = merge_phyloseq(ps_prop, tree)
+ps_prop_ord <- ordinate(ps_prop, "NMDS", "bray")
+
+df1 = data.frame(ps_prop_ord$points, 
+                 StudyID = sample_data(ps_prop)$StudyID, 
+                 Treatment = sample_data(ps_prop)$Treatment, 
+                 Timepoint = sample_data(ps_prop)$Timepoint)
+
+p1 = ggplot(data = df1)
+p1 + geom_point(aes(x = MDS1, y = MDS2, color = interaction(Timepoint, Treatment)))
+```
+
+
+
 
 
