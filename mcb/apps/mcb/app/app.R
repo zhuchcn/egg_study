@@ -167,7 +167,7 @@ server <- function(input, output) {
     
     output$phylo_boxplot <- renderPlotly({
         logjs(input$phylo_table_rows_selected)
-        otu = slot(sum_ps_prop, paste0(input$taxon, "_table"))
+        otu = slot(sum_ps_prop, paste0(input$taxon2, "_table"))
         df = data.frame(otu = as.numeric(otu[input$phylo_table_rows_selected,]), 
                         studyID = sample_data(sum_ps_prop)$StudyID, 
                         treatment = sample_data(sum_ps_prop)$Treatment, 
