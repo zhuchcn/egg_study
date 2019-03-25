@@ -1,0 +1,122 @@
+---
+title: "Network Analysis"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+pkgs = c("dplyr", "reshape2", "tibble", "ggplot2", "space", "qgraph", "igraph")
+for(pkg in pkgs) library(pkg, character.only = TRUE)
+```
+
+```{r}
+load("../../apps/app/data/data.rda")
+mcb = data$data$mcb$proportion$genus
+bga = data$data$bga
+bac = data$data$bac$raw
+cli = data$data$cli
+
+myscale = function(X) apply(t(X$conc_table), 2, function(x) scale(x))
+Data = do.call(cbind, lapply(list(mcb, bga, bac), myscale))
+```
+
+```{r}
+(function(params){
+    sapply(params$l, function(lambda){
+        spn = space.joint(Data, lambda, iter = 5)  
+        as.numeric(spn$ParCor)
+    }) %>% as.data.frame %>%
+        data.table::setnames(as.character(params$l)) %>%
+        melt() %>%
+        ggplot(aes(x = variable, y = value)) +
+            geom_boxplot()
+})(params = list(l = c(0.25, 0.27, 0.29, 0.31, 0.33)))
+```
+
+```{r}
+(function(iters){
+    sapply(iters, function(iter){
+        space.joint(Data, 0.31, iter = iter)$ParCor %>% as.numeric()
+    }) %>%
+        as.data.frame %>%
+        data.table::setnames(as.character(iters)) %>%
+        melt() %>%
+        ggplot(aes(variable, value)) +
+        geom_boxplot()
+})(iters = c(2, 5, 10, 15, 20))
+```
+
+
+```{r}
+spn = space.joint(Data, 0.31, iter = 5)
+cut(spn$ParCor, breaks = seq(-1, 1, length.out = 50)) %>% table
+table(spn$ParCor == 0)
+```
+
+
+```{r}
+spn_cor = spn$ParCor
+colnames(spn_cor) = colnames(Data)
+rownames(spn_cor) = colnames(Data)
+groups = c(rep("mcb", nfeatures(mcb)),
+           rep("bga", nfeatures(bga)),
+           rep("bac", nfeatures(bac)))
+```
+
+```{r}
+# @param mat: the correlation matrix. Must be a matrix object.
+# @param groups: the group labels. Must be an array with the lengh equals to the
+# nrow or ncol of mat
+# @param coef_cutoff: the cutoff of cofficients to keep. Any coefficient with an
+# absolute value small than the cutoff will be assigned with zero.
+# @param min_corr: the minimal number of correlation observed too keep. Any 
+# column and its corresponding row with less non zero coefficient than this 
+# value will be dropped.
+networkTunning = function(mat, groups, coef_cutoff, min_corr, layout){
+    ids = apply(mat, 2, function(x) {sum(!between(x, -coef_cutoff, coef_cutoff)) > min_corr})
+    mat = mat[ids, ids]
+    groups = groups[ids]
+    mat[between(mat, -coef_cutoff, coef_cutoff)] = 0
+    qg = qgraph(mat, groups = groups, DoNotPlot=TRUE)
+    if (is.function(layout)) {
+        ig = as.igraph(qg)
+        layout = layout(ig) 
+    }
+    qgraph(qg, layout = layout, DoNotPlot = FALSE)
+}
+networkTunning(mat = spn_cor, groups = groups, coef_cutoff = 0.3, 
+               min_corr = 1, layout = layout_with_mds)
+```
+
+```{r}
+id = apply(spn_cor, 2, function(x) {sum(!between(x, -0.3, 0.3)) > 2})
+mat = spn_cor[id, id]
+groups = groups[id]
+mat[between(mat, -0.3, 0.3)] = 0
+```
+
+
+```{r}
+node_list = data.frame(
+  node = colnames(mat),
+  group = groups
+)
+mat2 = mat
+mat2[do.call(c, lapply(1:nrow(mat), function(x) (1:x) + nrow(mat) * (x-1)))] = 0
+edge_list = melt(mat2) %>% filter(value != 0) %>% data.table::setnames(c("x1", "x2", "value"))
+
+network = data.frame(
+  x1 = edge_list$x1,
+  interaction = ifelse(edge_list$value > 0, "positive", "negative"),
+  x2 = edge_list$x2
+)
+edge_list$shared_name = apply(network, 1, function(x) glue::glue("{x[1]} ({x[2]}) {x[3]}"))
+edge_list$value = abs(edge_list$value)
+write.csv(node_list, "node.csv")
+write.csv(edge_list, "edge.csv")
+write.table(network, "network.sif", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+```
+
+
+

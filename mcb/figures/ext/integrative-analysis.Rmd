@@ -1,0 +1,299 @@
+---
+title: "Integrating Microbiome and Metabolome data"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+<hr />
+
+## 1. Intro
+
++ Intgrating -Omics data is very challenging
++ When we are performing this kind of analysis, we usually are trying to answer those questions below. For any x variable from matrix $\textbf{X}$ and any y variable from matrix $\textbf{Y}$
+    - Which pairs of x and y can best predict each other?
+    - Which groups of x and y can best predict each other?
+    - Which or which group of x can cause the variance of a given y.
++ Some approches have been applied in the field of genomics, transcriptomics, and metabolomics data
++ Those approches include:
+    - Univarate regression methods (i.e. Pearson and Spearman's correlation)
+    - Multivariate regression methods (i.e. PLS & CCA)
+    - Probabilistic Graph Models (i.e. bayesian network and HMM)
+    - Interaction networks
+    - Metabolic Networkds
++ However none of the methods above have been well applied in studying the gut microbiome and host metabolome interaction
+
+![](img/integrative-analysis-methods.png)
+<center>*Chong, et al. 2017, Computational Approaches for Integrative Analysis of the Metabolome and Microbiome*</center>
+
+
+```{r}
+pkgs = c("dplyr", "tibble", "reshape2", "stringr", "ggplot2", "OmicsPLS", "pls",
+         "mixOmics", "plotly")
+for(pkg in pkgs){
+    library(pkg, character.only = TRUE)
+}
+```
+
+## 2. Pre-process
+
+```{r}
+load("../apps/app/data/data.rda")
+mcb = data$data$mcb$proportion$genus
+bga = data$data$bga
+X = t(mcb$conc_table)
+Y = t(bga$conc_table)
+X = apply(X, 2, function(x) scale(x, center = TRUE, scale = TRUE))
+Y = apply(Y, 2, function(x) scale(x, center = TRUE, scale = TRUE))
+
+theme_set(theme_bw())
+```
+
+The heatmap below shows the correlation between all genera (in columns) and biogenic amines (in rows). The goal is to find the group of genera and biogenic amines that correlate with each other.
+
+```{r}
+pheatmap::pheatmap(t(cor(X, Y)), show_rownames = F, show_colnames = F)
+```
+
+## Feature Selection
+
+### 1. Partial Least Square (PLS)
+
+Partial least square (PLS) method decomposes both the predictor matrix X and the response matrix Y similar to the principle component analysis (PCA)
+
+$$ \textbf{X} = \textbf{TP}^\textbf{T} $$
+$$ \textbf{Y} = \textbf{UQ}^\textbf{T} $$
+
+The decomposition of $\textbf{X}$ and $\textbf{Y}$ was performed such that each componeent of $\textbf{T}$ can best predict each component of $\textbf{U}$.
+
+Let's fit the PLS model using the `plsr` function from the `pls` package. Cross-validation is preformed here, with a fold of 30. Cross-validation is required in PLS in order to find the best projection of X and Y.
+
+```{r}
+fit_pls = plsr(Y ~ X, validation = "CV", segments = 30)
+```
+
+We can plot the **scores** of first component from X and Y, and they correlate with each other very well. But did PLS really pick up the x that can best predict y?
+
+```{r, fig.height=4, fig.width=6, fig.align="center"}
+data.frame(X.comp1 = fit_pls$scores[,1],
+           Y.comp1 = fit_pls$Yscores[,1]) %>%
+    ggplot(aes(x = X.comp1, y = Y.comp1)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+  labs(title = "PLS Comp 1 of X vs Y") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+To answer the question above, we need to first find out which variables contribute most to the components. We use the loading matrices $\textbf{P}$ and $\textbf{Q}$.
+
+```{r}
+plotLoadingFromPls = function(fit, mat, cutoff){
+    loading = switch(mat, "X" = "loadings", "Y" = "Yloadings")
+    (
+        data.frame(
+            loading = fit[[loading]][,1],
+            var = rownames(fit[[loading]])
+        ) %>%
+            mutate(index = 1:length(loading)) %>%
+            ggplot(aes(x = index, y = loading, var = var)) +
+            geom_point(aes(color = !between(loading, cutoff[1], cutoff[2]))) +
+            geom_hline(yintercept = cutoff[1], color = "salmon", 
+                       linetype = "dashed") +
+            geom_hline(yintercept = cutoff[2], color = "salmon", 
+                       linetype = "dashed") +
+            labs(title = glue::glue("Comp1 loading values of {mat}")) +
+            scale_color_manual(values = c("grey18", "steelblue")) +
+            theme(legend.position = "none")
+    ) %>% ggplotly
+}
+```
+
+
+```{r, fig.height = 4, fig.width=8}
+plotLoadingFromPls(fit_pls, "X", c(-0.12, 0.2))
+```
+
+
+```{r, fig.height = 4, fig.width = 8}
+plotLoadingFromPls(fit_pls, "Y", c(-0.14, 0.11))
+```
+
+```{r}
+pheatmap::pheatmap(t(cor(X[,!between(fit_pls$loadings[,1], -0.12, 0.2)], Y[, !between(fit_pls$Yloadings[,1], -0.14, 0.11)])))
+```
+
+### 2. O2PLS
+
+Biological data usually has large systemic variation (or any unknown variations). The O2PLS (two-way orthogonal PLS) is derived from the O-PLS (orthogonal PLS). The O-PLS corrects the systemic variation in X matrix from removing the part that is not correlated with Y. While O2PLS does that a step ahead by removing the systemic variation from the Y matrix, too.
+
+references: Bouhaddani, et al. 2016, Evaluation of O2PLS in Omic data integration
+
+We will then fit a O2PLS model using the `OmicsPLS` package. To be noted that, the parameters, including a, ax, and aj need to be optimized. The optimization step was performed somewhere else so it is skipped here.
+
+```{r}
+fit_o2 = o2m(X, Y, 10, 9, 2)
+```
+
+```{r}
+data.frame(comp1.X = fit_o2$Tt[,1], comp1.Y = fit_o2$U[,1]) %>%
+    ggplot(aes(x = comp1.X, y = comp1.Y)) +
+    geom_point() +
+    stat_smooth(method = "lm")
+```
+
+```{r}
+plotLoadingFromO2PLS = function(fit, mat, cutoff){
+    loading = switch(mat, "X" = "W.", "Y" = "C.")
+    (
+        data.frame(comp1 = fit[[loading]][,1]) %>%
+            tibble::rownames_to_column("feature") %>%
+            tibble::rowid_to_column("index") %>%
+            ggplot(aes(x = index, y = comp1, feature = feature)) +
+            geom_point(aes(color = !between(comp1, cutoff[1], cutoff[2]))) +
+            scale_color_manual(values = c("grey40", "steelblue")) +
+            geom_hline(yintercept = cutoff[1], color = "salmon", 
+                       linetype = "dashed") +
+            geom_hline(yintercept = cutoff[2], color = "salmon", 
+                       linetype = "dashed") +
+            labs(title = glue::glue("Comp1 loading values of {mat}")) +
+            theme(legend.position = "none")
+    ) %>%
+        ggplotly
+}
+```
+
+```{r, fig.height = 4, fig.width=8}
+plotLoadingFromO2PLS(fit_o2, "X", c(-0.16, 0.13))
+```
+
+```{r, fig.height=4, fig.width=8}
+plotLoadingFromO2PLS(fit_o2, "Y", c(-0.152, 0.165))
+```
+
+```{r}
+pheatmap::pheatmap(t(cor(X[,!between(fit_o2$W.[,1], -0.16, 0.13)], Y[,!between(fit_o2$C.[,1], -0.152, 0.165)])))
+```
+
+### 3. RCCA
+
+```{r}
+df = data.frame( x = rnorm(60, 10, 1))
+df$y = df$x + rnorm(60, 0, 1)
+
+cowplot::plot_grid(
+    ggplot(df, aes(x, y)) + geom_point() + stat_smooth(method = "lm"),
+    ggplot(df, aes(x = y, y = x)) + geom_point() + stat_smooth(method = "lm") + coord_flip()
+)
+```
+
+
+RCCA (regularized canonical correlation analysis) is modified from the Canonical Correlation Analysis (CCA) method. The CCA, also similar to PCA, is trying to find a vector $\textbf{a}$ and $\textbf{b}$, such that the correlation of $\textbf{X}\textbf{a}$ and $\textbf{Y}\textbf{b}$ is maximized.
+
+The CCA face the 2 following problems:
+
++ The number of variables must smaller than the number of observations
++ Variables in X and Y must be indepandent to each other (not collinear)
+
+So the RCCA applys a regularization step on top on the CCA to solve the two problems. 
+
+```{r}
+fit_rcc = rcc(X, Y, ncomp = 3, method = "shrinkage")
+```
+
+```{r}
+plotLoadingFromRCCA = function(fit, mat, cutoff){
+    (
+        data.frame(
+            loading = fit$loadings[[mat]][,1],
+            var = rownames(fit$loadings[[mat]])
+        ) %>%
+            mutate(index = 1:length(loading)) %>%
+            ggplot(aes(x = index, y = loading, var = var)) +
+            geom_point(aes(color = !between(loading, cutoff[1], cutoff[2]))) +
+            geom_hline(yintercept = cutoff[1], color = "salmon", 
+                       linetype = "dashed") +
+            geom_hline(yintercept = cutoff[2], color = "salmon", 
+                       linetype = "dashed") +
+            scale_color_manual(values = c("grey18", "steelblue")) +
+            labs(title = glue::glue("Comp1 loading values for {mat}")) +
+            theme(legend.position = "none")
+    ) %>% ggplotly
+}
+```
+
+```{r, fig.height=4, fig.width=8}
+plotLoadingFromRCCA(fit_rcc, "X", c(-0.076,0.063))
+```
+
+```{r, fig.height=4, fig.width=8}
+plotLoadingFromRCCA(fit_rcc, "Y", c(-0.085,0.071))
+```
+
+```{r}
+pheatmap::pheatmap(t(cor(X[,!between(fit_rcc$loadings$X[,1], -0.076,0.063)], Y[,!between(fit_rcc$loadings$Y[,1], -0.085,0.071)])))
+```
+
+### 4. Regularized Generalized CCA (RGCCA)
+
+```{r}
+fit_rgcca = rgcca(A = list(X, Y), tau = "optimal")
+```
+
+```{r}
+plotLoadingFromRGCCA = function(fit, mat, cutoff){
+    mat = switch(mat, "X" = 1, "Y" = 2)
+    (
+        data.frame(
+            loading = fit$a[[mat]][,1],
+            var = rownames(fit$a[[mat]])
+        ) %>%
+            mutate(index = 1:length(loading)) %>%
+            ggplot(aes(x = index, y = loading, var = var)) +
+            geom_point(aes(color = !between(loading, cutoff[1], cutoff[2]))) +
+            geom_hline(yintercept = cutoff[1], color = "salmon", 
+                       linetype = "dashed") +
+            geom_hline(yintercept = cutoff[2], color = "salmon", 
+                       linetype = "dashed") +
+            scale_color_manual(values = c("grey18", "steelblue")) +
+            theme(legend.position = "none")
+    ) %>% ggplotly
+}
+```
+
+```{r, fig.height=4, fig.width=8}
+plotLoadingFromRGCCA(fit_rgcca, "X", c(-0.156,0.1944))
+```
+
+```{r, fig.height=4, fig.width=8}
+plotLoadingFromRGCCA(fit_rgcca, "Y", c(-0.22,0.23))
+```
+
+```{r}
+pheatmap::pheatmap(t(cor(X[,!between(fit_rgcca$a[[1]][,1], -0.156,0.1944)], Y[,!between(fit_rgcca$a[[2]][,1], -0.22,0.23)])))
+```
+
+```{r}
+rbind(
+  fit_rcc$loadings$X[,1:2] %>%
+    as.data.frame %>%
+    rownames_to_column("feature") %>%
+    mutate(type = "mcb"),
+  fit_rcc$loadings$Y[,1:2] %>%
+    as.data.frame %>%
+    rownames_to_column("feature") %>%
+    mutate(type = "bga")
+) %>% data.table::setnames(old = c("V1", "V2"), new = c("comp1", "comp2")) %>%
+  group_by(type) %>%
+  filter(feature %in% feature[c(order(comp1)[1:6], order(comp1, decreasing = T)[1:6])]) %>%
+  ggplot(aes(comp1, comp2)) +
+  geom_text(aes(label = feature, color = type))
+```
+
+<div class="alert alert-success">
+<strong>Conclusion</strong>
+<br />
+Although the O2PLS removes the varaince from both the predictor and response matrices, it does not yield much different result in this particular application. And because of the regularization step in RCCA, it is able to remove collinear varaibles. So RCCA is my favorite model.
+</div>
+
+
+
