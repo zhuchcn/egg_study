@@ -31,10 +31,12 @@
 #         |   |   +-- phylum: data.frame
 #         |   |   +-- ...
 #         |   |   +-- otu: data.frame
+#         +-- tree: phylo
 
 library(Metabase)
 library(phylox)
 library(phyloseq)
+library(ape)
 
 # Set working directory
 setwd(dirname(parent.frame(2)$ofile))
@@ -43,6 +45,8 @@ setwd(dirname(parent.frame(2)$ofile))
 load("../../../data/mcb.rda")
 
 mcb = Metabase::subset_features(mcb, rowSums(mcb$conc_table !=0 ) > 1)
+
+tree = keep.tip(tree, featureNames(mcb))
 
 # create a copy of mcb, adjust it by adding each otu 1 count, in order for DESeq2
 mcb_adj = mcb
@@ -72,6 +76,7 @@ count = list(
     lm = lm
 )
 
+
 ## -------- MCB PERCENT DATA LIST(mcb_pct) -------------------------------------
 precalc = new.env()
 load("../../Rdata/mcb_precalc.rda", envir = precalc)
@@ -91,7 +96,8 @@ data = list(
         percent = list(
             data = precalc$mcb,
             lm = precalc$lm
-        )
+        ),
+        tree = tree
     )
 )
 save(data, file = "../data/data.rda")
