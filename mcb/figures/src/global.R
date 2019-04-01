@@ -1,4 +1,4 @@
-pkgs = c('dplyr', 'reshape2', 'tibble', 'stringr', 'ggplot2', "Metabase")
+pkgs = c('dplyr', 'reshape2', 'tibble', 'stringr', 'ggplot2', 'ggsci')
 for(pkg in pkgs){
     suppressPackageStartupMessages(
         library(pkg, character.only = TRUE)
@@ -7,8 +7,13 @@ for(pkg in pkgs){
 load("../data/data.rda")
 
 ## -------- themes -------------------------------------------------------------
-text.size = 3.5
-title.size = 11
+`%+%` = function(x,y){
+    paste0(x,y)
+}
+
+point.size = 5
+text.size = 10
+title.size = 28
 my_theme = function(){
     theme_bw() +
         theme(
@@ -63,3 +68,6 @@ my_boxplot = function(mset,
     }
     return(p)
 }
+
+
+
