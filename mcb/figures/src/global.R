@@ -1,10 +1,12 @@
-pkgs = c('dplyr', 'reshape2', 'tibble', 'stringr', 'ggplot2')
+pkgs = c('dplyr', 'reshape2', 'tibble', 'stringr', 'ggplot2', "Metabase")
 for(pkg in pkgs){
     suppressPackageStartupMessages(
         library(pkg, character.only = TRUE)
     )
 }
+load("../data/data.rda")
 
+## -------- themes -------------------------------------------------------------
 text.size = 3.5
 title.size = 11
 my_theme = function(){

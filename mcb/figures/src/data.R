@@ -79,6 +79,8 @@ load("../../Rdata/mcb_precalc.rda", envir = precalc)
 ## -------- bga ----------------------------------------------------------------
 bga_precalc= new.env()
 load("../../Rdata/bga_precalc.rda", envir = bga_precalc)
+sampleNames(bga_precalc$bga) = gsub("-", "", sampleNames(bga_precalc$bga))
+sampleNames(bga_precalc$bga) = gsub("Egg", "EGG", sampleNames(bga_precalc$bga))
 
 ## -------- data object constructor --------------------------------------------
 data = list(
