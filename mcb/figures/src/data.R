@@ -40,3 +40,5 @@ mcb_pct_lm = precalc$lm
 mcb_pct_data = list(mcb_pct, mcb_pct_lm)
 
 mcb_data = list(mcb_ct_data, mcb_pct_data)
+
+save(mcb_data, file = '../data/data.rda')

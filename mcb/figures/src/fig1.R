@@ -1,5 +1,6 @@
 setwd(dirname(parent.frame(n = 2)$ofile))
 source("global.R")
+load("../data/data.rda")
 
 # Figure 1A
 # alpha diversity boxplot before and after egg and white
