@@ -48,4 +48,4 @@ p = zheatmap(
     print = FALSE
 )
 
-ggsave("../png/fig4.png", p, width = 9, height = 7, units = "in", dpi = 300)
+ggsave("../png/fig4.png", p, width = 8, height = 7, units = "in", dpi = 300)
