@@ -21,7 +21,8 @@ p4 = ggscatterplot(
     x = "x",
     y = "y",
     color = "subject",
-    color.pal = pal_npg()(10)
+    color.pal = pal_npg()(10),
+    point.size = point.size
 )+
     annotate(geom = "text", x = 130000, y = 12000, size = text.size, 
              label = "R = " %+% round(cor$estimate, 3) %+% "\nP = " %+% round(cor$p.value, 3))+
@@ -32,7 +33,7 @@ p4 = ggscatterplot(
 c(p1, p2, p3) %<-% align_plots(p1, p2, p3, align = "hv", axis = "tblr")
 
 p = plot_grid(p1, p2, p3, p4, labels = c("A", "B", "C", "D"), nrow = 2,
-          label_size = title.size)
+              label_size = title.size)
 
-ggsave("../png/fig3.png", p, width = 18, height = 16, units = "in", dpi = 300)
+ggsave("../png/fig3.png", p, width = 18, height = 12, units = "in", dpi = 300)
 

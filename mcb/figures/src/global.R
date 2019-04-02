@@ -1,5 +1,5 @@
 pkgs = c('dplyr', 'reshape2', 'tibble', 'stringr', 'ggplot2', 'ggsci', 'glue',
-         'Metabase', 'cowplot', 'zeallot')
+         'Metabase', 'cowplot', 'zeallot', "ggmetaplots")
 for(pkg in pkgs){
     suppressPackageStartupMessages(
         library(pkg, character.only = TRUE)
@@ -61,7 +61,8 @@ my_boxplot = function(mset,
     }
     p = plot_boxplot(mset, "Timepoint", feature, cols = "Treatment", 
                      line = "Subject", color = "Subject",
-                     color.pal = pal_npg()(10), point.size = 3) +
+                     color.pal = pal_npg()(10), point.size = point.size,
+                     point.alpha = 1) +
         labs(title = title,
              y = ylab) +
         theme_boxplot()
