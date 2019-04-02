@@ -47,13 +47,13 @@ for(i in seq_len(nrow(spn_cor))){
 #     }
 #     qgraph(qg, layout = layout, DoNotPlot = FALSE)
 # }
-# networkTunning(mat = spn_cor, coef_cutoff = 0.2,
+# networkTunning(mat = spn_cor, coef_cutoff = 0.215,
 #                min_corr = 0, layout = layout_with_mds)
 
-id = apply(spn_cor, 2, function(x) {sum(!between(x, -0.2, 0.2)) > 0})
+id = apply(spn_cor, 2, function(x) {sum(!between(x, -0.215, 0.215)) > 0})
 mat = spn_cor[id, id]
 groups = c(rep("mcb", nfeatures(mcb)), rep("bga", nfeatures(bga)))[id]
-mat[between(mat, -0.2, 0.2)] = 0
+mat[between(mat, -0.215, 0.215)] = 0
 
 node_list = data.frame(
     node = colnames(mat),
