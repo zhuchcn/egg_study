@@ -15,10 +15,10 @@ args$Class = "SummarizedPhyloStats"
 lm = do.call(new, args)
 tr = parsePhyloseq(otu, use_abundance = F, node.size.scale = 1.25)
 p = tree.backbone(tr, size=1)
-anno.data = create_annodata(lm, coef = "pvalue", cutoff = 0.1)
+anno.data = create_annodata(lm, coef = "pvalue", cutoff = 0.1, colors = c("#ED0000FF", "#00468BFF"))
 p = clade.anno(p, anno.data)
 p = p + geom_point(
-    data=data.frame(x=1:2,  y=1:2, color=c("Yolk-free Substitute","Whole Egg")),
+    data=data.frame(x=1:2,  y=1:2, color=c("Increase","Decrease")),
     aes(x=x, y=y, color=color), size=0, stroke=0) +
     guides(
         color = guide_legend(
