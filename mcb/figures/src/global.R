@@ -1,4 +1,5 @@
-pkgs = c('dplyr', 'reshape2', 'tibble', 'stringr', 'ggplot2', 'ggsci')
+pkgs = c('dplyr', 'reshape2', 'tibble', 'stringr', 'ggplot2', 'ggsci', 'glue',
+         'Metabase', 'cowplot', 'zeallot')
 for(pkg in pkgs){
     suppressPackageStartupMessages(
         library(pkg, character.only = TRUE)
@@ -18,7 +19,7 @@ my_theme = function(){
     theme_bw() +
         theme(
             axis.title = element_text(size = title.size),
-            axis.text = element_text(size = title.size - 2),
+            axis.text = element_text(size = title.size - 4),
             legend.title = element_text(size = title.size - 1),
             legend.text = element_text(size = title.size - 2),
             legend.key.size = unit(1, "line"),
@@ -59,7 +60,8 @@ my_boxplot = function(mset,
         title = glue("{featureNameToDisplay} (P = {round(pval, 3)})")   
     }
     p = plot_boxplot(mset, "Timepoint", feature, cols = "Treatment", 
-                     line = "Subject", color = "Subject", color.pal = pal_npg()(10)) +
+                     line = "Subject", color = "Subject",
+                     color.pal = pal_npg()(10), point.size = 3) +
         labs(title = title,
              y = ylab) +
         theme_boxplot()
