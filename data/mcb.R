@@ -11,19 +11,14 @@ setwd(dirname(parent.frame(2)$ofile))
 ##########                    M I C R O B I O M E                     ##########
 ################################################################################
 
-otu_table = read.table('../raw_data/feature_table.tsv', 
+otu_table = read.table('../raw_data/microbiome/feature_table.tsv', 
                        sep = '\t', header=T, stringsAsFactor=F, row.names = 1)
-tax_table = read.table('../raw_data/taxonomy.tsv', 
+tax_table = read.table('../raw_data/microbiome/taxonomy.tsv', 
                        sep='\t', header=T, stringsAsFactor=F, row.names = 1)
-sample_data = read.table('../raw_data/sample_metadata.tsv', 
+sample_data = read.table('../raw_data/microbiome/sample_metadata.tsv', 
                          sep='\t', header=T, stringsAsFactors = F, row.names = 1)
-rownames(otu_table) = str_c(
-    "MCB", str_pad(rownames(otu_table), width = 4, pad = "0")
-)
+
 otu_table = otu_table[,rownames(sample_data)]
-rownames(tax_table) = str_c(
-    "MCB", str_pad(rownames(tax_table), width = 4, pad = "0")
-)
 
 otu_table = otu_table %>% as.matrix %>% conc_table()
 sample_data$Timepoint = factor(sample_data$Timepoint, 
@@ -32,7 +27,7 @@ sample_data = sample_data %>%
     mutate(Treatment = ifelse(Treatment == "Egg", "egg", "sub")) %>%
     mutate(Treatment = factor(Treatment, levels = c("sub", "egg")))
 
-colnames(otu_table) = paste0("Egg",sample_data$SubjectID)
+colnames(otu_table) = paste0("Egg", sample_data$SubjectID)
 rownames(sample_data) = paste0("Egg",sample_data$SubjectID)
 
 sample_data$Subject = gsub("^EG", "", sample_data$StudyID)
@@ -40,10 +35,8 @@ sample_data = sample_table(sample_data)
 tax_table = feature_data(tax_table)
 mcb = MicrobiomeSet(otu_table, sample_data, tax_table)
 
-sampleNames(mcb) = str_c("EGG",mcb$sample_table$SubjectID)
-
-tree = read.tree(file = "../raw_data/tree.nwk")
-tree$tip.label = paste0("MCB",tree$tip.label)
+#tree = read.tree(file = "../raw_data/tree.nwk")
+#tree$tip.label = paste0("MCB",tree$tip.label)
 
 ################################################################################
 ##########               B I O G E N I C   A M I N E S                ##########
@@ -101,6 +94,7 @@ bga$feature_data$Annotation[bga$feature_data$InChIKey == "IYRMWMYZSQPJKC-UHFFFAO
 bga$feature_data$Annotation[bga$feature_data$InChIKey == "ZFXYFBGIUFBOJW-UHFFFAOYSA-N"] = "Theophylline"
 
 featureNames(bga) = bga$feature_data$Annotation
+sampleNames(bga) = gsub("-", "", sampleNames(bga))
 
 ################################################################################
 ##########                     B I L E   A C I D                      ##########
@@ -118,7 +112,7 @@ bac = import_wcmc_excel(
     feature_range = feature_range, 
     InChIKey = "InChIKey"
 )
-sampleNames(bac) = gsub("\\d{2,3}-\\d{1,2}-Egg-(\\d{3})-([A-D]{1})", "EGG\\1\\2", sampleNames(bac))
+sampleNames(bac) = gsub("\\d{2,3}-\\d{1,2}-Egg-(\\d{3})-([A-D]{1})", "Egg\\1\\2", sampleNames(bac))
 featureNames(bac) = bac$feature_data$`short key`
 bac$sample_table$Subject = bga$sample_table$Subject
 bac$sample_table$Timepoint = bga$sample_table$Timepoint
@@ -139,4 +133,4 @@ bac = subset_features(
 ################################################################################
 ##########                          S A V E                           ##########
 ################################################################################
-save(mcb, bga, bac, tree, file = "mcb.rda")
+save(mcb, bga, bac,  file = "mcb.rda")
