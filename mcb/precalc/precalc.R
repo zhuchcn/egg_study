@@ -14,18 +14,6 @@ mcb = mcb %>%
     phylox::summarizeFromPhyloseq() %>%
     phylox::as_MicrobiomeSetList()
 
-bac = MetabolomicsSet(
-    conc_table = bac$conc_table,
-    feature_data = bac$feature_data,
-    sample_table = bac$sample_table
-)
-
-bga = MetabolomicsSet(
-    conc_table   = bga$conc_table,
-    feature_data = bga$feature_data,
-    sample_table = bga$sample_table
-)
-
 cli = MultxSet(
     conc_table   = clinical$conc_table,
     sample_table = clinical$sample_table
@@ -77,4 +65,4 @@ data = list(
     ),
     lm = lm
 )
-save(data, file = "../Rdata/precalc.rda")
+save(data, file = "../Rdata/precalc.rds")
