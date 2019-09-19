@@ -35,8 +35,11 @@ sample_data = sample_table(sample_data)
 tax_table = feature_data(tax_table)
 mcb = MicrobiomeSet(otu_table, sample_data, tax_table)
 
-#tree = read.tree(file = "../raw_data/tree.nwk")
-#tree$tip.label = paste0("MCB",tree$tip.label)
+mcb = subset_samples(mcb, ! mcb$sample_table$Subject %in% c(111, 118, 120))
+mcb = subset_features(mcb, apply(mcb$conc_table, 1, function(x) sum(x != 0) != 0))
+
+tree = read.tree(file = "../raw_data/microbiome/tree.nwk")
+tree$tip.label = paste0("MCB",tree$tip.label)
 
 ################################################################################
 ##########               B I O G E N I C   A M I N E S                ##########
@@ -133,4 +136,4 @@ bac = subset_features(
 ################################################################################
 ##########                          S A V E                           ##########
 ################################################################################
-save(mcb, bga, bac,  file = "mcb.rda")
+save(mcb, bga, bac, tree, file = "mcb.rda")
