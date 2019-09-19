@@ -77,4 +77,4 @@ data = list(
     ),
     lm = lm
 )
-saveRDS(data, file = "../Rdata/precalc.rds")
+save(data, file = "../Rdata/precalc.rda")

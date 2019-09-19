@@ -122,14 +122,19 @@ spiked = read_excel(file,sheet = "SOP", range = "I2:J26") %>%
 bga$experiment_data = list(
     istd_spiked = spiked,
     istd_calibrate = function(x, xi, istd, spiked, unit){
-        res = spiked[istd, unit] * (x/xi) * (100 / 110) * (413/20) * 10^-3
+        res = spiked[istd, unit] * (x/xi) * 100 * (2/1) * (1/20) * 10^-3
         if(unit == "ng/mL"){
             unit = "mg/L"
         } else {
             unit = "umol/L"
         }
         return(list(value = res, unit = unit))
-    }
+    },
+    istd_protocol = glue::glue("
+        20 ul plasma was extracted, and half bottom layer was dried down, 
+        resuspended with 100 ul resuspension solution with internal standards,
+        and injected into LCMS
+    ")
 )
 
 # tmao = spiked["D9-TMAO", "pmol/mL"] *
