@@ -68,6 +68,18 @@ bga = transform_by_feature(
     bga, function(x) ifelse(is.na(x), min(x, na.rm = TRUE)/2, x)
 )
 
+## -------- read in interal standard result data separatly ---------------------
+istd_data = read_excel(
+    file, sheet = "Submit", range = "I8:CJ24", 
+    col_names = sampleNames(bga)
+) %>%
+    as.data.frame %>%
+    cbind(read_excel(file, sheet = "Submit", range = "B7:B24")) %>%
+    column_to_rownames("Annotation") %>%
+    t %>% as.data.frame
+
+bga$sample_table = sample_table(cbind(bga$sample_table, istd_data))
+
 ## -------- metadata -----------------------------------------------------------
 metadata = read_excel(
     "../raw_data/clinical_data/1-LSK Egg Study Clincal & Diet Data w_ApoA1-HDL.6.27.2018.xlsx",
@@ -87,10 +99,10 @@ metadata = read_excel(
 
 metadata = metadata[sampleNames(bga),]
 
-bga$sample_table = sample_table(
-    cbind(bga$sample_table[,colnames(bga$sample_table) != "Treatment"], 
-          metadata)
-)
+bga$sample_table = sample_table(cbind(
+    bga$sample_table[,colnames(bga$sample_table) != "Treatment"], 
+    metadata
+))
 bga$feature_data$Annotation <- as.character(bga$feature_data$Annotation)
 bga$feature_data$Annotation[bga$feature_data$InChIKey == "DKZBBWMURDFHNE-NSCUHMNNSA-N"] = "4-Hydroxy-3-methoxycinnamaldehyde"
 bga$feature_data$Annotation[bga$feature_data$InChIKey == "IYRMWMYZSQPJKC-UHFFFAOYSA-N"] = "Kaempferol"
@@ -98,6 +110,31 @@ bga$feature_data$Annotation[bga$feature_data$InChIKey == "ZFXYFBGIUFBOJW-UHFFFAO
 
 featureNames(bga) = bga$feature_data$Annotation
 sampleNames(bga) = gsub("-", "", sampleNames(bga))
+
+# read in the internal standard data
+file = "../raw_data/biogenic_amines/HILIC_ISTD_mix_2016-11-15 (1).xlsx"
+spiked = read_excel(file,sheet = "SOP", range = "I2:J26") %>% 
+    as.data.frame %>%
+    cbind(read_excel(file, sheet = "SOP", range = "A2:A26")) %>%
+    column_to_rownames("ISTD short name") %>%
+    `colnames<-`(c("ng/mL", "pmol/mL"))
+
+bga$experiment_data = list(
+    istd_spiked = spiked,
+    istd_calibrate = function(x, xi, istd, spiked, unit){
+        res = spiked[istd, unit] * (x/xi) * (100 / 110) * (413/20) * 10^-3
+        if(unit == "ng/mL"){
+            unit = "mg/L"
+        } else {
+            unit = "umol/L"
+        }
+        return(list(value = res, unit = unit))
+    }
+)
+
+# tmao = spiked["D9-TMAO", "pmol/mL"] *
+#     (bga$conc_table["TMAO",] / bga$sample_table[,"1_D9-TMAO iSTD"])  *
+#     (100 / 110) * (413 /20) * 10^-3
 
 ################################################################################
 ##########                     B I L E   A C I D                      ##########

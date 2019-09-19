@@ -6,6 +6,7 @@ for(pkg in pkgs){
 }
 
 load("../../data/mcb.rda")
+load("../../data/diet.Rdata")
 
 mcb = mcb %>%
     transform_by_sample(function(x) {x = x + 0.5; x/sum(x, na.rm = TRUE)}) %>%
@@ -23,6 +24,16 @@ bga = MetabolomicsSet(
     conc_table   = bga$conc_table,
     feature_data = bga$feature_data,
     sample_table = bga$sample_table
+)
+
+cli = MultxSet(
+    conc_table   = clinical$conc_table,
+    sample_table = clinical$sample_table
+)
+
+diet = MultxSet(
+    conc_table = diet$conc_table,
+    sample_table = diet$sample_table
 )
 
 # linear model
@@ -60,8 +71,10 @@ data = list(
         mcb = mcb,
         bga = bga,
         bac = bac,
+        cli = cli,
+        diet = diet,
         tree = tree
     ),
     lm = lm
 )
-save(data, file = "../Rdata/precalc.rda")
+saveRDS(data, file = "../Rdata/precalc.rds")
