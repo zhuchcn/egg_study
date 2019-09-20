@@ -65,4 +65,4 @@ data = list(
     ),
     lm = lm
 )
-save(data, file = "../Rdata/precalc.rds")
+saveRDS(data, file = "../Rdata/precalc.rds")
