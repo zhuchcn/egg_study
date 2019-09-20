@@ -122,7 +122,7 @@ spiked = read_excel(file,sheet = "SOP", range = "I2:J26") %>%
 bga$experiment_data = list(
     istd_spiked = spiked,
     istd_calibrate = function(x, xi, istd, spiked, unit){
-        res = spiked[istd, unit] * (x/xi) * 100 * (2/1) * (1/20) * 10^-3
+        res = spiked[istd, unit] * (x/xi) * 100 * (240/110) * (1/20) * 10^-3
         if(unit == "ng/mL"){
             unit = "mg/L"
         } else {
