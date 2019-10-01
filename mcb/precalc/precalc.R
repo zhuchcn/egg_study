@@ -8,11 +8,14 @@ for(pkg in pkgs){
 load("../../data/mcb.rda")
 load("../../data/diet.Rdata")
 
-mcb = mcb %>%
-    transform_by_sample(function(x) {x = x + 0.5; x/sum(x, na.rm = TRUE)}) %>%
-    as_phyloseq() %>%
-    phylox::summarizeFromPhyloseq() %>%
-    phylox::as_MicrobiomeSetList()
+mcb = list(
+    count = mcb,
+    precent = mcb %>%
+        transform_by_sample(function(x) {x = x + 0.5; x/sum(x, na.rm = TRUE)}) %>%
+        as_phyloseq() %>%
+        phylox::summarizeFromPhyloseq() %>%
+        phylox::as_MicrobiomeSetList()
+)
 
 cli = MultxSet(
     conc_table   = clinical$conc_table,
@@ -32,7 +35,7 @@ make_design = function(mset){
     )
 }
 lm = list(
-    mcb = lapply(mcb, function(mset){
+    mcb = lapply(mcb$precent, function(mset){
         mSet_limma(
             mset, 
             make_design(mset), 
